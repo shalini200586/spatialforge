@@ -142,15 +142,29 @@ def sanity_flags(result: ReconstructionResult, max_range_m: float) -> list[str]:
     return flags
 
 
-# ---------- main entry point ----------
+
+# ---------- capture preparation and per-frame loading (shared with drift correction) ----------
 
 
-def reconstruct_lidar(
-    capture: str | Path, output: str | Path, options: ReconstructionOptions | None = None
-) -> ReconstructionResult:
-    opts = options or ReconstructionOptions()
-    started = time.perf_counter()
+@dataclass
+class CaptureContext:
+    """Everything needed to turn a selected frame into camera-space points."""
 
+    root: Path
+    options: ReconstructionOptions
+    poses: dict[int, dict]
+    frames: list[int]
+    depth_dir: Path
+    conf_dir: Path
+    depth_size: tuple[int, int]
+    source_size: tuple[int, int]
+    fallback_intrinsics: Intrinsics | None
+
+
+def prepare_capture(
+    capture: str | Path, output: str | Path, opts: ReconstructionOptions
+) -> tuple[CaptureContext, ReconstructionResult]:
+    """Validate the capture, read poses, select frames and work out the intrinsics scaling."""
     validation = validate_lidar_capture(capture)
     if validation.status is Status.INVALID:
         raise ReconstructionError(
@@ -196,82 +210,137 @@ def reconstruct_lidar(
         )
     result.scale_factors = (depth_w / src_w, depth_h / src_h)
 
-    fallback = load_camera_matrix(root / "camera_matrix.csv")
-
-    def source_intrinsics(fid: int) -> Intrinsics:
-        intr = poses[fid]["intr"] or fallback
-        if intr is None:
-            raise ReconstructionError(f"no intrinsics for frame {fid} (odometry.csv and camera_matrix.csv)")
-        return intr
-
-    check = source_intrinsics(frames[0])
+    ctx = CaptureContext(
+        root=root,
+        options=opts,
+        poses=poses,
+        frames=frames,
+        depth_dir=depth_dir,
+        conf_dir=conf_dir,
+        depth_size=(depth_w, depth_h),
+        source_size=(src_w, src_h),
+        fallback_intrinsics=load_camera_matrix(root / "camera_matrix.csv"),
+    )
+    check = _source_intrinsics(ctx, frames[0])
     if abs(check.cx / src_w - 0.5) > PRINCIPAL_POINT_TOLERANCE or abs(check.cy / src_h - 0.5) > PRINCIPAL_POINT_TOLERANCE:
         result.warnings.append(
             f"principal point ({check.cx}, {check.cy}) is far from the centre of a {src_w}x{src_h} image; "
             "source size may be wrong or width/height swapped"
         )
+    return ctx, result
 
-    # --- process frames one at a time ---
-    chunks: list[np.ndarray] = []
-    positions = []
-    for fid in frames:
-        depth = _read_png(depth_dir / f"{fid:06d}.png")
-        if depth.shape != (depth_h, depth_w):
-            raise ReconstructionError(f"depth frame {fid} has shape {depth.shape}, expected {(depth_h, depth_w)}")
-        confidence = None
-        if opts.min_confidence > 0:
-            conf_path = conf_dir / f"{fid:06d}.png"
-            if not conf_path.is_file():
-                raise ReconstructionError(f"confidence frame {fid} is missing; use --min-confidence 0 to ignore")
-            confidence = _read_png(conf_path)
 
-        range_ok = geometry.valid_depth_mask(
-            depth, None, 0, opts.min_range_m, opts.max_range_m, result.depth_scale
-        )
-        mask = range_ok if confidence is None else range_ok & (confidence >= opts.min_confidence)
+def _source_intrinsics(ctx: CaptureContext, fid: int) -> Intrinsics:
+    intr = ctx.poses[fid]["intr"] or ctx.fallback_intrinsics
+    if intr is None:
+        raise ReconstructionError(f"no intrinsics for frame {fid} (odometry.csv and camera_matrix.csv)")
+    return intr
+
+
+def pose_rotation(ctx: CaptureContext, fid: int) -> np.ndarray:
+    try:
+        return geometry.quat_to_rotation(*ctx.poses[fid]["q"])
+    except ValueError as exc:
+        raise ReconstructionError(f"frame {fid}: bad quaternion ({exc})") from exc
+
+
+def load_frame_points(
+    ctx: CaptureContext, fid: int, result: ReconstructionResult | None = None
+) -> np.ndarray:
+    """Filtered camera-space XYZ (N, 3, metres) for one frame. Updates the filter counters in `result`."""
+    opts = ctx.options
+    depth_w, depth_h = ctx.depth_size
+    depth = _read_png(ctx.depth_dir / f"{fid:06d}.png")
+    if depth.shape != (depth_h, depth_w):
+        raise ReconstructionError(f"depth frame {fid} has shape {depth.shape}, expected {(depth_h, depth_w)}")
+    confidence = None
+    if opts.min_confidence > 0:
+        conf_path = ctx.conf_dir / f"{fid:06d}.png"
+        if not conf_path.is_file():
+            raise ReconstructionError(f"confidence frame {fid} is missing; use --min-confidence 0 to ignore")
+        confidence = _read_png(conf_path)
+
+    range_ok = geometry.valid_depth_mask(depth, None, 0, opts.min_range_m, opts.max_range_m)
+    mask = range_ok if confidence is None else range_ok & (confidence >= opts.min_confidence)
+
+    src_intr = _source_intrinsics(ctx, fid)
+    depth_intr = geometry.scale_intrinsics(src_intr, *ctx.source_size, depth_w, depth_h)
+    if result is not None:
         result.candidate_points += depth.size
         result.removed_by_depth += int(depth.size - range_ok.sum())
         result.removed_by_confidence += int(range_ok.sum() - mask.sum())
-
-        src_intr = source_intrinsics(fid)
-        depth_intr = geometry.scale_intrinsics(src_intr, src_w, src_h, depth_w, depth_h)
         if result.example_frame < 0:
             result.example_frame = fid
             result.example_source_intrinsics = src_intr
             result.example_depth_intrinsics = depth_intr
+    return geometry.backproject(depth, mask, depth_intr)
 
-        pose = poses[fid]
-        positions.append(pose["t"])
+
+def build_world_cloud(
+    ctx: CaptureContext,
+    result: ReconstructionResult | None = None,
+    pose_matrices: dict[int, np.ndarray] | None = None,
+) -> np.ndarray:
+    """Voxel-downsampled world cloud of all selected frames, one frame in memory at a time.
+
+    `pose_matrices` ({frame: 4x4 camera-to-world}) replaces the supplied odometry poses, which is
+    how the drift stage builds its corrected cloud with otherwise identical processing.
+    Each frame is voxel-downsampled before the global pass. Both keep the first point per voxel in
+    input order, so the final cloud is identical to a single global pass but needs far less memory.
+    """
+    voxel = ctx.options.voxel_size
+    chunks: list[np.ndarray] = []
+    total = 0
+    for fid in ctx.frames:
+        cam_points = load_frame_points(ctx, fid, result)
+        if pose_matrices is None:
+            rotation, translation = pose_rotation(ctx, fid), ctx.poses[fid]["t"]
+        else:
+            rotation, translation = pose_matrices[fid][:3, :3], pose_matrices[fid][:3, 3]
+        world = geometry.transform_points(cam_points, rotation, translation).astype(np.float32)
+        total += len(world)
         try:
-            rotation = geometry.quat_to_rotation(*pose["q"])
+            chunks.append(geometry.voxel_downsample(world, voxel))
         except ValueError as exc:
-            raise ReconstructionError(f"frame {fid}: bad quaternion ({exc})") from exc
-        cam_points = geometry.backproject(depth, mask, depth_intr, result.depth_scale)
-        chunks.append(geometry.transform_points(cam_points, rotation, pose["t"]).astype(np.float32))
-
-    cloud = np.vstack(chunks) if chunks else np.empty((0, 3), dtype=np.float32)
-    del chunks
-    result.points_after_filter = len(cloud)
-    if len(cloud) == 0:
+            raise ReconstructionError(str(exc)) from exc
+    if result is not None:
+        result.points_after_filter = total
+    if total == 0:
         raise ReconstructionError("no valid depth points remain after filtering; relax --min-confidence or range")
+    cloud = np.vstack(chunks)
     if not np.isfinite(cloud).all():
         raise ReconstructionError("point cloud contains NaN/inf values (bad pose or intrinsics data)")
-
     try:
-        cloud = geometry.voxel_downsample(cloud, opts.voxel_size)
+        return geometry.voxel_downsample(cloud, voxel)
     except ValueError as exc:
         raise ReconstructionError(str(exc)) from exc
+
+
+def write_cloud_ply(path: Path, cloud: np.ndarray) -> None:
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        geometry.write_ply(path, cloud)
+    except OSError as exc:
+        raise ReconstructionError(f"cannot write {path}: {exc}") from exc
+
+
+# ---------- main entry point ----------
+
+
+def reconstruct_lidar(
+    capture: str | Path, output: str | Path, options: ReconstructionOptions | None = None
+) -> ReconstructionResult:
+    opts = options or ReconstructionOptions()
+    started = time.perf_counter()
+    ctx, result = prepare_capture(capture, output, opts)
+
+    cloud = build_world_cloud(ctx, result)
     result.points_after_downsample = len(cloud)
 
-    traj = np.array(positions)
+    traj = np.array([ctx.poses[fid]["t"] for fid in ctx.frames])
     result.trajectory_min, result.trajectory_max = traj.min(axis=0), traj.max(axis=0)
     result.cloud_min, result.cloud_max = cloud.min(axis=0), cloud.max(axis=0)
 
-    try:
-        result.output_path.parent.mkdir(parents=True, exist_ok=True)
-        geometry.write_ply(result.output_path, cloud)
-    except OSError as exc:
-        raise ReconstructionError(f"cannot write {result.output_path}: {exc}") from exc
-
+    write_cloud_ply(result.output_path, cloud)
     result.runtime_s = time.perf_counter() - started
     return result
