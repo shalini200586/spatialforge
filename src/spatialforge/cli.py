@@ -306,6 +306,28 @@ def format_openings_report(rep: dict, output_dir) -> str:
     return "\n".join(lines)
 
 
+def format_process_summary(result) -> str:
+    rep = result.run_report
+    lines = [f"Status: {rep['status'].upper()}   tier: {rep['tier']}   runtime: {rep.get('runtime_s', 0):.1f} s"]
+    for e in rep.get("errors", []):
+        lines.append(f"ERROR [{e['stage']}]: {e['message']}")
+    if "counts" in rep:
+        c = rep["counts"]
+        lines.append(f"Rooms {c['rooms']}, walls {c['walls']} ({c['walls_strong_or_moderate']} strong/moderate), "
+                     f"openings {c['openings']} (+{c['unverified_openings']} unverified), ceiling levels {c['ceiling_levels']}, "
+                     f"rooms with a ceiling height {c['rooms_with_ceiling']}")
+        lines.append(f"Production poses: {rep['production_pose_source']}")
+    if rep.get("warnings"):
+        lines.append(f"Warnings ({len(rep['warnings'])}):")
+        lines += [f"  - {w}" for w in rep["warnings"]]
+    for name, p in rep.get("outputs", {}).items():
+        path = result.files.get(name)
+        if path is not None and path.exists():
+            lines.append(f"  {name}: {path.stat().st_size:,} bytes")
+    lines.append(f"Output folder: {rep['output']}")
+    return "\n".join(lines)
+
+
 def _size_arg(text: str) -> tuple[int, int]:
     try:
         w, h = text.lower().split("x")
@@ -402,12 +424,33 @@ def main(argv: list[str] | None = None) -> int:
     o.add_argument("--min-opening-width", type=float, default=None, help="smallest accepted opening, metres (default 0.4)")
     o.add_argument("--max-opening-width", type=float, default=None, help="largest accepted opening, metres (default 4.0)")
     o.add_argument("--source-size", type=_size_arg, help="override the image size the intrinsics refer to")
+
+    pr = sub.add_parser(
+        "process",
+        help="end-to-end: capture -> property.json + plan.png + run_report.json (+ diagnostics/)",
+    )
+    pr.add_argument("capture", help="path to the capture folder")
+    pr.add_argument("--tier", required=True, choices=["lidar", "video", "photos"], help="input tier (only lidar exists so far)")
+    pr.add_argument("--output", required=True, help="result folder")
+    pr.add_argument("--max-frames", type=int, default=400, help="cap on frames used, evenly spaced (default 400)")
+    pr.add_argument("--frame-step", type=int, default=1, help="use every Nth frame (default 1)")
     args = parser.parse_args(argv)
 
     if args.command == "validate-lidar":
         result = validate_lidar_capture(args.path)
         print(format_report(result))
         return 1 if result.status is Status.INVALID else 0
+
+    if args.command == "process":
+        if args.tier != "lidar":
+            print(f"error: the {args.tier} tier is not implemented yet", file=sys.stderr)
+            return 2
+        from spatialforge.pipeline.lidar_pipeline import PipelineOptions, process_capture
+
+        result = process_capture(args.capture, args.output,
+                                 PipelineOptions(frame_step=args.frame_step, max_frames=args.max_frames), tier=args.tier)
+        print(format_process_summary(result))
+        return result.exit_code
 
     if args.command == "analyze-openings":
         from spatialforge.lidar.openings import OpeningOptions  # openings_run imports Open3D (via the drift stage)

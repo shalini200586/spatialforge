@@ -1,12 +1,57 @@
 # SpatialForge
 
-Early-stage project. Current scope: a LiDAR capture validator and metadata inspector.
+Turns a capture of a property into a dimensioned floor plan and a machine-readable description. The LiDAR tier
+(depth + camera poses) is implemented; video and photo tiers are not yet.
 
 ## Install
 
     pip install -e .[test]
 
 ## Usage
+
+    python -m spatialforge process CAPTURE --tier lidar --output RESULT
+
+One command runs every stage (capture validation, metric reconstruction with a pose-refinement check, floor and
+ceiling planes, structural walls, room topology, openings) and writes:
+
+    RESULT\property.json     canonical property description (schema v1.0, see below)
+    RESULT\plan.png          rendered, dimensioned floor plan (product output, not a debug view)
+    RESULT\run_report.json   operational report: status, per-stage timings and statuses, counts, warnings, errors
+    RESULT\diagnostics\      small debug artifacts (wall/room/opening overlays, stage summaries); no point clouds
+
+Exit code: 0 = success or partial result, 1 = failure (invalid capture, no metric reconstruction), 2 = bad usage.
+Options: `--max-frames 400` and `--frame-step 1` (evenly spaced, deterministic frame selection).
+
+**Results are partial by design.** Only spaces whose walls form closed outlines become rooms, and only openings
+verified in 3D are reported. `property.status` says `partial` and `warnings` lists what is missing (incomplete
+room topology, unverified opening recall, no ground truth); nothing missing is filled in with fake geometry.
+
+### property.json
+
+`schema_version "1.0"`, then `capture` (tier, source, device), `property` (status, footprint if available),
+`rooms` (polygon, area, perimeter, length x width where meaningful, wall ids, ceiling height where observed,
+adjacent and connected room ids, topology quality), `walls`, `openings` (type, width, height/sill where observed,
+room connectivity, existence/type quality), `unverified_openings`, empty `damage`, `concealed_damage_flags` and
+`scope_line_items`, `warnings`, `provenance` (stages, pose source, depth scale, assumptions) and `timing`.
+
+Every measurement is `{value, unit, interval {low, high} | null, confidence | null, quality | null, source_tier}`.
+The interval is the stage's own uncertainty range, never invented. `confidence` is a heuristic score (not a
+probability) and is only present where a stage computes one (ceiling heights); other values carry a `quality` label.
+Output is deterministic (sorted keys, rounded numbers); only the `timing` section differs between identical runs.
+
+**Schema:** the case-study materials supplied no separate schema file, so SpatialForge defines schema v1.0
+(`schema/property.schema.json`, kept in sync with the code by a test). It is not an official evaluator schema.
+
+### plan.png
+
+Rooms (id, area, length x width or "irregular", ceiling height), structural walls, edge dimensions and accepted
+openings with their widths, on a metric-scaled white background. Policies: weak walls are not drawn; walls outside
+any recovered room are dashed grey; unverified wall gaps are dotted; low-confidence openings are left out of the
+plan and listed under `unverified_openings`; a PARTIAL badge and note are always shown for partial results.
+
+## Development: individual stage commands
+
+These remain available for debugging; `process` runs them all.
 
     python -m spatialforge validate-lidar "C:\path\to\capture"
 

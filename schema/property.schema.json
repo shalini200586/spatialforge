@@ -1,0 +1,584 @@
+{
+  "$defs": {
+    "Ceiling": {
+      "additionalProperties": false,
+      "properties": {
+        "ambiguous": {
+          "type": "boolean"
+        },
+        "coverage": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "height": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "observed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "ambiguous",
+        "coverage",
+        "height",
+        "observed"
+      ],
+      "type": "object"
+    },
+    "Footprint": {
+      "additionalProperties": false,
+      "properties": {
+        "area": {
+          "$ref": "#/$defs/Measurement"
+        },
+        "complete": {
+          "type": "boolean"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "polygon": {
+          "items": {
+            "$ref": "#/$defs/Point"
+          },
+          "minItems": 3,
+          "type": "array"
+        }
+      },
+      "required": [
+        "area",
+        "complete",
+        "kind",
+        "note",
+        "polygon"
+      ],
+      "type": "object"
+    },
+    "Interval": {
+      "additionalProperties": false,
+      "properties": {
+        "high": {
+          "type": "number"
+        },
+        "low": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "high",
+        "low"
+      ],
+      "type": "object"
+    },
+    "Measurement": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "interval": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Interval"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "quality": {
+          "enum": [
+            "strong",
+            "moderate",
+            "weak",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_tier": {
+          "type": "string"
+        },
+        "unit": {
+          "type": "string"
+        },
+        "value": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "confidence",
+        "interval",
+        "quality",
+        "source_tier",
+        "unit",
+        "value"
+      ],
+      "type": "object"
+    },
+    "Opening": {
+      "additionalProperties": false,
+      "properties": {
+        "connected_room_ids": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "connects": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "existence_quality": {
+          "enum": [
+            "strong",
+            "moderate",
+            "weak"
+          ],
+          "type": "string"
+        },
+        "height": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "left_jamb": {
+          "$ref": "#/$defs/Point"
+        },
+        "observability": {
+          "enum": [
+            "strong",
+            "moderate",
+            "weak"
+          ],
+          "type": "string"
+        },
+        "position": {
+          "$ref": "#/$defs/Point"
+        },
+        "right_jamb": {
+          "$ref": "#/$defs/Point"
+        },
+        "room_ids": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "sill_height": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "type": {
+          "enum": [
+            "door",
+            "window",
+            "opening"
+          ],
+          "type": "string"
+        },
+        "type_quality": {
+          "enum": [
+            "strong",
+            "moderate",
+            "weak"
+          ],
+          "type": "string"
+        },
+        "wall_id": {
+          "type": "string"
+        },
+        "width": {
+          "$ref": "#/$defs/Measurement"
+        }
+      },
+      "required": [
+        "connected_room_ids",
+        "connects",
+        "existence_quality",
+        "height",
+        "id",
+        "left_jamb",
+        "observability",
+        "position",
+        "right_jamb",
+        "room_ids",
+        "sill_height",
+        "type",
+        "type_quality",
+        "wall_id",
+        "width"
+      ],
+      "type": "object"
+    },
+    "Point": {
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "z": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "z"
+      ],
+      "type": "object"
+    },
+    "Room": {
+      "additionalProperties": false,
+      "properties": {
+        "adjacent_room_ids": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "area": {
+          "$ref": "#/$defs/Measurement"
+        },
+        "ceiling": {
+          "$ref": "#/$defs/Ceiling"
+        },
+        "connected_room_ids": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "dimension_method": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "length": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "opening_ids": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "opens_to_unmodelled": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "perimeter": {
+          "$ref": "#/$defs/Measurement"
+        },
+        "polygon": {
+          "items": {
+            "$ref": "#/$defs/Point"
+          },
+          "minItems": 3,
+          "type": "array"
+        },
+        "topology_quality": {
+          "enum": [
+            "strong",
+            "moderate",
+            "weak"
+          ],
+          "type": "string"
+        },
+        "wall_ids": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "wall_lengths": {
+          "items": {
+            "$ref": "#/$defs/Measurement"
+          },
+          "type": "array"
+        },
+        "width": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "adjacent_room_ids",
+        "area",
+        "ceiling",
+        "connected_room_ids",
+        "dimension_method",
+        "id",
+        "length",
+        "opening_ids",
+        "opens_to_unmodelled",
+        "perimeter",
+        "polygon",
+        "topology_quality",
+        "wall_ids",
+        "wall_lengths",
+        "width"
+      ],
+      "type": "object"
+    },
+    "Segment": {
+      "additionalProperties": false,
+      "properties": {
+        "end": {
+          "$ref": "#/$defs/Point"
+        },
+        "length": {
+          "$ref": "#/$defs/Measurement"
+        },
+        "start": {
+          "$ref": "#/$defs/Point"
+        }
+      },
+      "required": [
+        "end",
+        "length",
+        "start"
+      ],
+      "type": "object"
+    },
+    "Wall": {
+      "additionalProperties": false,
+      "properties": {
+        "end": {
+          "$ref": "#/$defs/Point"
+        },
+        "evidence_quality": {
+          "enum": [
+            "strong",
+            "moderate",
+            "weak"
+          ],
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "length": {
+          "$ref": "#/$defs/Measurement"
+        },
+        "observed_length": {
+          "$ref": "#/$defs/Measurement"
+        },
+        "opening_ids": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "orientation": {
+          "$ref": "#/$defs/Measurement"
+        },
+        "position_uncertainty": {
+          "$ref": "#/$defs/Measurement"
+        },
+        "room_ids": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "segments": {
+          "items": {
+            "$ref": "#/$defs/Segment"
+          },
+          "type": "array"
+        },
+        "start": {
+          "$ref": "#/$defs/Point"
+        }
+      },
+      "required": [
+        "end",
+        "evidence_quality",
+        "id",
+        "length",
+        "observed_length",
+        "opening_ids",
+        "orientation",
+        "position_uncertainty",
+        "room_ids",
+        "segments",
+        "start"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "spatialforge/property.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Defined by SpatialForge; the case-study materials supplied no separate schema file. Not an official evaluator schema.",
+  "properties": {
+    "capture": {
+      "required": [
+        "tier",
+        "source"
+      ],
+      "type": "object"
+    },
+    "concealed_damage_flags": {
+      "type": "array"
+    },
+    "damage": {
+      "type": "array"
+    },
+    "openings": {
+      "items": {
+        "$ref": "#/$defs/Opening"
+      },
+      "type": "array"
+    },
+    "property": {
+      "additionalProperties": false,
+      "properties": {
+        "footprint": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Footprint"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "opening_count": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "room_count": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "status": {
+          "enum": [
+            "complete",
+            "partial"
+          ],
+          "type": "string"
+        },
+        "wall_count": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "footprint",
+        "opening_count",
+        "room_count",
+        "status",
+        "wall_count"
+      ],
+      "type": "object"
+    },
+    "provenance": {
+      "type": "object"
+    },
+    "rooms": {
+      "items": {
+        "$ref": "#/$defs/Room"
+      },
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "1.0"
+    },
+    "scope_line_items": {
+      "type": "array"
+    },
+    "timing": {
+      "type": "object"
+    },
+    "unverified_openings": {
+      "items": {
+        "$ref": "#/$defs/Opening"
+      },
+      "type": "array"
+    },
+    "walls": {
+      "items": {
+        "$ref": "#/$defs/Wall"
+      },
+      "type": "array"
+    },
+    "warnings": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "capture",
+    "concealed_damage_flags",
+    "damage",
+    "openings",
+    "property",
+    "provenance",
+    "rooms",
+    "schema_version",
+    "scope_line_items",
+    "timing",
+    "unverified_openings",
+    "walls",
+    "warnings"
+  ],
+  "title": "SpatialForge property schema v1.0",
+  "type": "object"
+}
