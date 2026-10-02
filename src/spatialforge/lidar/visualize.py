@@ -230,6 +230,111 @@ def render_rooms_topdown(cloud, topo, wall_inputs, bounds, path: Path) -> None:
     img.convert("RGB").save(path)
 
 
+OPENING_COLOURS = {"door": (20, 70, 220), "window": (0, 160, 170), "opening": (200, 20, 200)}
+
+
+def render_openings_topdown(cloud, topo, wall_inputs, result, bounds, path: Path) -> None:
+    """Openings over the walls and room polygons (X-Z, metres). Thick line between the refined jambs:
+    blue door, teal window, magenta generic opening; dashed orange = low confidence; small grey x = rejected
+    candidate (raw gap midpoint)."""
+    x0, x1, z0, z1 = bounds
+    w, h = int((x1 - x0) * PIXELS_PER_METRE), int((z1 - z0) * PIXELS_PER_METRE)
+    base = Image.new("RGBA", (w + 2 * MARGIN, h + 2 * MARGIN), (255, 255, 255, 255))
+    if cloud is not None and len(cloud):
+        col = ((cloud[:, 0] - x0) * PIXELS_PER_METRE).astype(int)
+        row = h - 1 - ((cloud[:, 2] - z0) * PIXELS_PER_METRE).astype(int)
+        keep = (col >= 0) & (col < w) & (row >= 0) & (row < h)
+        counts = np.zeros((h, w), dtype=np.int32)
+        np.add.at(counts, (row[keep], col[keep]), 1)
+        gray = (255 - 45 * np.clip(np.log1p(counts) / np.log1p(20), 0, 1)).astype(np.uint8)
+        base.paste(Image.fromarray(gray).convert("RGBA"), (MARGIN, MARGIN))
+
+    def px(p):
+        return (MARGIN + (p[0] - x0) * PIXELS_PER_METRE, MARGIN + h - 1 - (p[1] - z0) * PIXELS_PER_METRE)
+
+    overlay = Image.new("RGBA", base.size, (0, 0, 0, 0))
+    od = ImageDraw.Draw(overlay)
+    if topo is not None:
+        for k, room in enumerate(topo.rooms):
+            od.polygon([px(p) for p in room.polygon], fill=ROOM_FILLS[k % len(ROOM_FILLS)] + (40,))
+    img = Image.alpha_composite(base, overlay)
+    d = ImageDraw.Draw(img)
+    d.rectangle([MARGIN - 1, MARGIN - 1, MARGIN + w, MARGIN + h], outline="black")
+    for x in np.arange(x0, x1 + 1, 1.0):
+        d.text((MARGIN + int((x - x0) * PIXELS_PER_METRE) - 8, MARGIN + h + 8), f"{x:.0f}", fill="black")
+    for z in np.arange(z0, z1 + 1, 1.0):
+        d.text((MARGIN - 30, MARGIN + h - 1 - int((z - z0) * PIXELS_PER_METRE) - 5), f"{z:.0f}", fill="black")
+    for wall in wall_inputs:
+        for a, b in wall.segments:
+            d.line([px(a), px(b)], fill=(120, 120, 120), width=3)
+    if topo is not None:
+        for room in topo.rooms:
+            pts = [px(p) for p in room.polygon]
+            d.line(pts + [pts[0]], fill=(150, 150, 150), width=1)
+            c = px(room.polygon.mean(axis=0))
+            d.text((c[0] - 16, c[1] - 6), room.id, fill=(110, 110, 110))
+    rejected_mid = {r["candidate_id"]: [(r["raw_start"][i] + r["raw_end"][i]) / 2 for i in range(2)] for r in result.rejected}
+    for cid, mid in rejected_mid.items():
+        p = px(mid)
+        d.line([p[0] - 5, p[1] - 5, p[0] + 5, p[1] + 5], fill=(110, 110, 110), width=2)
+        d.line([p[0] - 5, p[1] + 5, p[0] + 5, p[1] - 5], fill=(110, 110, 110), width=2)
+        d.text((p[0] + 7, p[1] - 6), cid[-3:], fill=(110, 110, 110))
+    for o in result.openings:
+        a = px((o.left_jamb["x"], o.left_jamb["z"]))
+        b = px((o.right_jamb["x"], o.right_jamb["z"]))
+        colour = OPENING_COLOURS[o.type]
+        if o.status == "accepted":
+            d.line([a, b], fill=colour, width=7)
+        else:
+            _dashed(d, a, b, (235, 120, 0), 5, 7)
+        for p in (a, b):
+            d.ellipse([p[0] - 4, p[1] - 4, p[0] + 4, p[1] + 4], fill="white", outline="black")
+        mid = ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
+        d.text((mid[0] + 8, mid[1] - 18), f"{o.id[-3:]} {o.type} {o.width_m:.2f} m", fill=(0, 0, 0))
+    d.text((8, 8), f"Openings: {len(result.accepted)} accepted, {len(result.low_confidence)} low confidence, "
+                   f"{len(result.rejected)} rejected candidates (X-Z metres)", fill="black")
+    d.text((8, 24), "blue door / teal window / magenta generic opening, dashed orange = low confidence, grey x = rejected candidate, "
+                    "grey lines = walls", fill=(90, 90, 90))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    img.convert("RGB").save(path)
+
+
+def render_opening_profile(grid, candidate, opening, outcome: str, path: Path) -> None:
+    """u-v wall occupancy of one candidate. Dark = solid wall, mid-grey = occupied, light blue = points just in
+    front of / behind the wall (possible occlusion). Green dashed = raw gap, red = refined jambs."""
+    nv, nu = grid.solid.shape
+    cell = 14
+    img = Image.new("RGB", (nu * cell + 120, nv * cell + 110), "white")
+    d = ImageDraw.Draw(img)
+    ox, oy = 60, 50
+    for r in range(nv):
+        for c in range(nu):
+            y = oy + (nv - 1 - r) * cell
+            x = ox + c * cell
+            colour = (30, 30, 30) if grid.solid[r, c] else (150, 150, 150) if grid.occupied[r, c] else (190, 215, 245) if grid.slab[r, c] else (255, 255, 255)
+            d.rectangle([x, y, x + cell - 1, y + cell - 1], fill=colour)
+    d.rectangle([ox - 1, oy - 1, ox + nu * cell, oy + nv * cell], outline="black")
+
+    def ux(u):
+        return ox + (u - grid.u0) / grid.du * cell
+
+    for u, colour, dash in ((candidate.u0, (0, 150, 0), True), (candidate.u1, (0, 150, 0), True)):
+        if dash:
+            _dashed(d, (ux(u), oy), (ux(u), oy + nv * cell), colour, 2, 6)
+    if opening is not None:
+        for jamb in (opening.left_jamb, opening.right_jamb):
+            d.line([ux(jamb["u_m"]), oy, ux(jamb["u_m"]), oy + nv * cell], fill=(220, 0, 0), width=2)
+    for k in range(0, nv, 2):
+        d.text((8, oy + (nv - 1 - k) * cell), f"{grid.v0 + k * grid.dv:.1f}", fill="black")
+    d.text((8, 8), f"{candidate.id} on {candidate.wall_id}: {outcome}", fill="black")
+    sub = "" if opening is None else f"{opening.type}, width {opening.width_m:.2f} m [{opening.width_interval_m[0]:.2f}, {opening.width_interval_m[1]:.2f}]"
+    d.text((8, 24), sub or f"raw gap {candidate.raw_width_m:.2f} m", fill=(60, 60, 60))
+    d.text((8, oy + nv * cell + 8), f"u along the wall (m), 5 cm cells, from {grid.u0:.2f};  v height above floor (m), 10 cm rows; "
+                                    "dark solid / grey occupied / blue = clutter near wall", fill=(90, 90, 90))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    img.save(path)
+
+
 def render_topdown(
     cloud: np.ndarray,
     bounds: tuple[float, float, float, float],

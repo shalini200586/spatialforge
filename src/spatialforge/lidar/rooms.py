@@ -95,6 +95,7 @@ class WallInput:
     position_uncertainty_m: float
     segments: list[tuple[tuple[float, float], tuple[float, float]]]  # observed (start, end)
     gaps: list[dict] = field(default_factory=list)
+    residual_p90_m: float = 0.06  # how blurred the wall surface is (used by the opening stage)
 
     def __post_init__(self):
         self.centre = np.asarray(self.centre, dtype=float)
@@ -135,6 +136,7 @@ class WallInput:
             position_uncertainty_m=float(d["position_uncertainty_m"]),
             segments=[(tuple(s["start"]), tuple(s["end"])) for s in d["segments"]],
             gaps=list(d.get("gaps", [])),
+            residual_p90_m=float(d.get("residual_p90_m", 0.06)),
         )
 
 

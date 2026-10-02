@@ -278,6 +278,34 @@ def format_rooms_report(rep: dict, output_dir) -> str:
     return "\n".join(lines)
 
 
+def format_openings_report(rep: dict, output_dir) -> str:
+    c = rep["counts_by_type"]
+    lines = [
+        f"Capture: {rep['capture']}   pose source: {rep['pose_source']}   frames: {rep['frames_used']} "
+        f"({rep['frame_subsets']} subsets)   walls: {rep['walls_considered']}   rooms available: {rep['rooms_available']}",
+        f"Wall gaps considered {rep['wall_gaps_considered']}, candidate openings {rep['candidate_openings']}, "
+        f"ACCEPTED {rep['accepted_openings']} (doors {c['door']}, windows {c['window']}, generic {c['opening']}), "
+        f"low-confidence {rep['low_confidence_openings']}, rejected {rep['rejected_candidates']}",
+        "",
+    ]
+    for o in rep["openings"] + rep["low_confidence"]:
+        h = f"{o['height_m']:.2f} m" if o["height_m"] is not None else "not observed"
+        s = f"{o['sill_height_m']:.2f} m" if o["sill_height_m"] is not None else "n/a"
+        lines += [
+            f"{o['id']} [{o['status']}] {o['type']} on {o['wall_id']}: width {o['width_m']:.2f} m "
+            f"[{o['width_interval_m'][0]:.2f}, {o['width_interval_m'][1]:.2f}], height {h}, sill {s}",
+            f"   quality: existence {o['existence_quality']}, type {o['type_quality']}, width {o['width_quality']}; "
+            f"observability {o['observability']}; raw gap {o['candidate']['raw_gap_width_m']:.2f} m ({o['candidate']['source']})",
+            f"   connects: {o['connects']}  subsets: {[round(x, 2) for x in o['metrics']['subset_widths_m']]}",
+        ]
+    lines += ["", "Rooms:"]
+    for rid, v in rep["connectivity"].items():
+        lines.append(f"   {rid}: adjacent {v['adjacent_room_ids']}  connected through openings {v['connected_room_ids']}  "
+                     f"opens to unmodelled space via {v['opens_to_unmodelled']}")
+    lines += ["", f"Runtime: {rep['runtime_s']:.1f} s", f"Artifacts: {output_dir}"]
+    return "\n".join(lines)
+
+
 def _size_arg(text: str) -> tuple[int, int]:
     try:
         w, h = text.lower().split("x")
@@ -360,12 +388,50 @@ def main(argv: list[str] | None = None) -> int:
                    help="largest wall extension allowed to form a corner, metres (default: RoomOptions, 0.5)")
     q.add_argument("--min-room-area", type=float, default=None, help="smallest accepted room, m2 (default: RoomOptions, 1.2)")
     q.add_argument("--source-size", type=_size_arg, help="override the image size the intrinsics refer to")
+
+    o = sub.add_parser(
+        "analyze-openings",
+        help="verify wall gaps in 3D and measure door/window/opening widths (no photo/video/damage layers)",
+    )
+    o.add_argument("path", help="path to the capture folder")
+    o.add_argument("--output-dir", required=True, help="folder for openings.json, opening_candidates.json, plots")
+    o.add_argument("--frame-step", type=int, default=1, help="use every Nth frame (default 1)")
+    o.add_argument("--max-frames", type=int, default=400, help="cap on frames used, evenly spaced (default 400)")
+    o.add_argument("--min-confidence", type=int, default=2, help="minimum confidence level 0-2 (default 2)")
+    o.add_argument("--voxel-size", type=float, default=0.02, help="voxel size in metres (default 0.02)")
+    o.add_argument("--min-opening-width", type=float, default=None, help="smallest accepted opening, metres (default 0.4)")
+    o.add_argument("--max-opening-width", type=float, default=None, help="largest accepted opening, metres (default 4.0)")
+    o.add_argument("--source-size", type=_size_arg, help="override the image size the intrinsics refer to")
     args = parser.parse_args(argv)
 
     if args.command == "validate-lidar":
         result = validate_lidar_capture(args.path)
         print(format_report(result))
         return 1 if result.status is Status.INVALID else 0
+
+    if args.command == "analyze-openings":
+        from spatialforge.lidar.openings import OpeningOptions  # openings_run imports Open3D (via the drift stage)
+        from spatialforge.lidar.openings_run import run_opening_analysis
+
+        options = ReconstructionOptions(
+            frame_step=args.frame_step,
+            max_frames=args.max_frames,
+            min_confidence=args.min_confidence,
+            voxel_size=args.voxel_size,
+            source_size=args.source_size,
+        )
+        overrides = {}
+        if args.min_opening_width is not None:
+            overrides["min_width_m"] = args.min_opening_width
+        if args.max_opening_width is not None:
+            overrides["max_width_m"] = args.max_opening_width
+        try:
+            report, _ = run_opening_analysis(args.path, args.output_dir, options, OpeningOptions(**overrides))
+        except ReconstructionError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        print(format_openings_report(report, args.output_dir))
+        return 0
 
     if args.command == "analyze-rooms":
         from spatialforge.lidar.rooms import RoomOptions  # rooms_run imports Open3D (via the drift stage)

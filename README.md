@@ -171,6 +171,40 @@ Known limitations: only spaces whose walls are detected AND connect become rooms
 unmodelled; rooms with undetected dividing walls come out merged; blurred walls limit corner accuracy to a few
 centimetres; thresholds were calibrated on three captures; no openings, labels or room types yet.
 
+## Structural openings
+
+    python -m spatialforge analyze-openings "C:\spatialforge-data\single_room" --output-dir "C:\temp\openings_room"
+
+Verifies the wall gaps preserved by the wall stage using local 3D evidence and measures the openings. It works on
+structural walls, so openings are found even where no complete room polygon exists.
+
+- **Candidates:** gaps inside a wall group, gaps between collinear walls of different groups, and unobserved
+  stretches along room boundaries (away from corners). A gap alone is never an opening.
+- **Verification:** for every candidate the 3D points near the wall plane (a tolerance of 2x the wall's own blur,
+  0.12-0.20 m; floor and ceiling excluded) are binned into a u (along the wall) x v (height) occupancy map. An
+  opening needs an empty middle over a band of rows with a solid wall run on BOTH sides in those rows. A wall that
+  is complete in 3D, a wall end (only one jamb backed), poorly scanned surroundings, points just in front of the
+  wall (furniture/occlusion), an unclean opening region, and widths outside 0.4-4 m are all rejected, with the
+  reason and stage kept in `opening_candidates.json`.
+- **Type:** reaches the floor and is not wider than 1.6 m -> door; solid wall below the gap (sill >= 0.4 m) -> window;
+  anything else, including very wide openings -> generic `opening`. Height and sill are reported only when the head
+  or sill is actually observed (otherwise null).
+- **Jambs and width:** per row, the nearest solid run on each side gives an edge; the jamb is the median over rows.
+  Width = right jamb - left jamb; the raw gap from the wall stage is not used as the width.
+- **Uncertainty:** the width interval combines jamb scatter across rows, the 5 cm grid, wall position, and the
+  disagreement between three deterministic frame subsets (alternating blocks of frames) re-measured independently.
+- **Ratings are separate:** `observability`, `existence_quality` (never `strong` without independent subset
+  confirmation), `type_quality` and `width_quality`. Openings whose existence is weak are listed as
+  `low_confidence` and do not count toward connectivity.
+- **Connectivity:** `connected_room_ids` only for verified openings that sit on the boundary of two rooms; an opening on one
+  room's boundary (or none) connects to `unmodelled` space. This is separate from geometric adjacency.
+- **Outputs:** `openings.json`, `opening_candidates.json`, `openings_topdown.png`, `opening_profiles/*.png` (the
+  u-v map of every candidate).
+
+Known limitations: most heads/sills are not observed, so heights are mostly null; walls blurred by residual drift make
+jamb edges ragged (typically +-0.2 m) and widths uncertain; frame subsets often cannot all measure a candidate;
+openings in walls the wall stage missed cannot be found; no ground truth was available.
+
 ## Tests
 
     python -m pytest
