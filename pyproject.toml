@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spatialforge"
+version = "0.1.0"
+description = "SpatialForge: LiDAR capture validation and metadata inspection"
+requires-python = ">=3.11"
+# numpy: depth/confidence statistics. Pillow: decoding 16-bit grayscale PNGs
+# (the standard library cannot read PNG). Both are small and CPU-only.
+dependencies = ["numpy", "Pillow"]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.scripts]
+spatialforge = "spatialforge.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
