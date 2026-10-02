@@ -137,6 +137,40 @@ Known limitations: no rooms, corners or openings yet; blurred walls make line po
 centimetres; some parallel duplicates, off-axis lines and furniture planes remain (see the evidence tier and
 `wall_candidates.json`); thresholds were calibrated on three captures and are not production-validated.
 
+## Room topology
+
+    python -m spatialforge analyze-rooms "C:\spatialforge-data\single_room" --output-dir "C:\temp\rooms_room"
+
+Turns the structural wall candidates into connected room geometry (metric X-Z, polygons counter-clockwise).
+It consumes the wall stage's output (snapped orientations, evidence tiers, uncertainties, observed segments and
+gaps); it does not re-detect walls.
+
+- **Corners:** infinite wall lines are intersected for pairs more than 25 degrees apart. A corner is accepted
+  only if each wall needs at most a short extension to reach it: up to 0.5 m for strong walls, 80% of that
+  for moderate and 50% for weak (plus a small margin for the other wall's position uncertainty). 0.5 m comes
+  from the measured near-misses on the samples (0.43-0.49 m, then 0.60 m and more). Nothing is extended further,
+  and the extension of every corner is reported.
+- **Gaps:** a collinear gap inside a wall is never closed or erased. The wall stays one conceptual edge across
+  it, with `gap_m` and `observed_support_fraction` recorded separately, ready for opening analysis.
+- **Parallel duplicates** within 35 cm are reduced to the stronger wall.
+- **Rooms:** the bounded faces of the planar wall graph (half-edge face walking, no cycle enumeration), kept if
+  they pass sanity filters (area, edge length, thickness, not mostly inferred, mostly observed, simple polygon,
+  not nested, not an outline enclosing interior walls). Weak walls take part only in a second pass and may close
+  a face only if the other edges are strong/moderate; they can never subdivide an accepted room. Open or
+  unclosable regions simply produce no room.
+- **Measurements:** area (shoelace), perimeter and wall lengths; length/width for rectangular rooms from the
+  distance between opposite fitted wall lines (or an oriented bounding box for near-rectangles); irregular
+  rooms get no length/width. Intervals come from shifting every wall by +-its position uncertainty (inflated for
+  weak walls and inferred corners) over a fixed set of sign patterns. They are diagnostics, not calibrated.
+- **Ceilings:** each room gets the Ticket 4 ceiling level whose solid inlier area covers most of it (at least
+  25%); if two levels at different heights overlap comparably the room is reported as ambiguous, not assigned.
+- **Adjacency** is geometric only (parallel polygon edges within 40 cm that overlap); it says nothing about doors.
+- **Outputs:** `rooms.json`, `wall_graph.json`, `room_polygons.geojson` (local metric frame), `rooms_topdown.png`.
+
+Known limitations: only spaces whose walls are detected AND connect become rooms, so most of a property can stay
+unmodelled; rooms with undetected dividing walls come out merged; blurred walls limit corner accuracy to a few
+centimetres; thresholds were calibrated on three captures; no openings, labels or room types yet.
+
 ## Tests
 
     python -m pytest

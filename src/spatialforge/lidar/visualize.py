@@ -149,6 +149,87 @@ def render_walls_topdown(cloud: np.ndarray, analysis, bounds: tuple[float, float
     canvas.save(path)
 
 
+ROOM_FILLS = [(230, 80, 80), (80, 120, 230), (60, 180, 90), (200, 90, 200), (40, 180, 190), (240, 170, 40)]
+TIER_COLOURS = {"strong": (0, 110, 40), "moderate": (30, 80, 200), "weak": (235, 130, 0)}
+
+
+def _dashed(draw: ImageDraw.ImageDraw, a, b, colour, width=2, dash=8):
+    n = max(2, int(np.hypot(b[0] - a[0], b[1] - a[1]) / dash))
+    for i in range(0, n, 2):
+        p0 = (a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n)
+        p1 = (a[0] + (b[0] - a[0]) * (i + 1) / n, a[1] + (b[1] - a[1]) * (i + 1) / n)
+        draw.line([p0, p1], fill=colour, width=width)
+
+
+def render_rooms_topdown(cloud, topo, wall_inputs, bounds, path: Path) -> None:
+    """Room topology diagnostic (X-Z, metres). Faint cloud and observed walls underneath; rooms filled with
+    their evidence-coloured boundary (green strong, blue moderate, orange weak-supported, dashed red =
+    inferred extension); corners as dots (hollow red = inferred); rejected faces thin purple."""
+    x0, x1, z0, z1 = bounds
+    w, h = int((x1 - x0) * PIXELS_PER_METRE), int((z1 - z0) * PIXELS_PER_METRE)
+    base = Image.new("RGBA", (w + 2 * MARGIN, h + 2 * MARGIN), (255, 255, 255, 255))
+    if cloud is not None and len(cloud):
+        col = ((cloud[:, 0] - x0) * PIXELS_PER_METRE).astype(int)
+        row = h - 1 - ((cloud[:, 2] - z0) * PIXELS_PER_METRE).astype(int)
+        keep = (col >= 0) & (col < w) & (row >= 0) & (row < h)
+        counts = np.zeros((h, w), dtype=np.int32)
+        np.add.at(counts, (row[keep], col[keep]), 1)
+        gray = (255 - 60 * np.clip(np.log1p(counts) / np.log1p(20), 0, 1)).astype(np.uint8)
+        base.paste(Image.fromarray(gray).convert("RGBA"), (MARGIN, MARGIN))
+
+    def px(p):
+        return (MARGIN + (p[0] - x0) * PIXELS_PER_METRE, MARGIN + h - 1 - (p[1] - z0) * PIXELS_PER_METRE)
+
+    overlay = Image.new("RGBA", base.size, (0, 0, 0, 0))
+    od = ImageDraw.Draw(overlay)
+    for k, room in enumerate(topo.rooms):
+        od.polygon([px(p) for p in room.polygon], fill=ROOM_FILLS[k % len(ROOM_FILLS)] + (70,))
+    img = Image.alpha_composite(base, overlay)
+    d = ImageDraw.Draw(img)
+    d.rectangle([MARGIN - 1, MARGIN - 1, MARGIN + w, MARGIN + h], outline="black")
+    for x in np.arange(x0, x1 + 1, 1.0):
+        d.text((MARGIN + int((x - x0) * PIXELS_PER_METRE) - 8, MARGIN + h + 8), f"{x:.0f}", fill="black")
+    for z in np.arange(z0, z1 + 1, 1.0):
+        d.text((MARGIN - 30, MARGIN + h - 1 - int((z - z0) * PIXELS_PER_METRE) - 5), f"{z:.0f}", fill="black")
+
+    for wall in wall_inputs:  # observed wall support, lightly
+        for a, b in wall.segments:
+            d.line([px(a), px(b)], fill=(170, 170, 170), width=3)
+    used = set()
+    for room in topo.rooms:
+        used.update(w for e in room.edges for w in e.wall_ids)
+    nodes = topo.graph.nodes
+    for e in topo.graph.edges:  # graph edges not on any room boundary stay visible but faint
+        if e.wall_id not in used:
+            _dashed(d, px(nodes[e.a].point), px(nodes[e.b].point), (140, 150, 190), 1, 6)
+    for rej in topo.rejected_faces:
+        pts = [px(p) for p in rej["polygon"]]
+        if len(pts) >= 3:
+            d.line(pts + [pts[0]], fill=(150, 60, 190), width=1)
+    for k, room in enumerate(topo.rooms):
+        pts = [px(p) for p in room.polygon]
+        for i, e in enumerate(room.edges):
+            a, b = pts[i], pts[(i + 1) % len(pts)]
+            d.line([a, b], fill=TIER_COLOURS[e.tier], width=4)
+            if e.inferred_extension_m > 0.02:
+                _dashed(d, a, b, (220, 0, 0), 2, 6)
+        c = room.polygon.mean(axis=0)
+        cx, cy = px(c)
+        d.text((cx - 28, cy - 12), f"{room.id[-3:]}  {room.area_m2:.1f} m2", fill="black")
+        dims = f"{room.length_m:.2f}x{room.width_m:.2f}" if room.length_m else "irregular"
+        d.text((cx - 28, cy + 2), f"{dims}  {room.topology_quality}", fill=(60, 60, 60))
+    for n in nodes:
+        p = px(n.point)
+        inferred = any(v > 0.02 for v in n.extensions.values())
+        d.ellipse([p[0] - 4, p[1] - 4, p[0] + 4, p[1] + 4], outline=(220, 0, 0) if inferred else "black",
+                  fill=None if inferred else (30, 30, 30))
+    d.text((8, 8), f"Room topology: {len(topo.rooms)} rooms from {topo.wall_count} walls (X-Z metres, +Z up, polygons CCW)", fill="black")
+    d.text((8, 24), "boundary: green strong / blue moderate / orange weak-supported / dashed red inferred extension | "
+                    "hollow red dot = inferred corner | purple = rejected face | grey = observed walls", fill=(90, 90, 90))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    img.convert("RGB").save(path)
+
+
 def render_topdown(
     cloud: np.ndarray,
     bounds: tuple[float, float, float, float],

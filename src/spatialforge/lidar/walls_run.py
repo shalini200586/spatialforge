@@ -16,6 +16,29 @@ from spatialforge.lidar.visualize import render_walls_topdown, shared_bounds
 from spatialforge.lidar.walls import WallAnalysis, WallOptions, extract_walls
 
 
+def compute_walls(
+    capture: str | Path,
+    output_dir: str | Path,
+    recon_opts: ReconstructionOptions,
+    wall_opts: WallOptions | None = None,
+    plane_opts: PlaneOptions | None = None,
+):
+    """Production poses (Ticket 3) -> floor/ceiling planes (Ticket 4) -> structural walls (Ticket 5).
+
+    Returns (drift computation, plane analysis, wall analysis). Shared by the wall and room commands.
+    """
+    comp = compute_drift_ablation(
+        capture, Path(output_dir) / "production.ply", recon_opts, drift.DriftOptions(), drift.AcceptanceRules()
+    )
+    cloud = comp.production_cloud
+    cameras = np.array([T[:3, 3] for T in comp.production_poses])
+    planes = analyze_horizontal_planes(cloud, cameras, plane_opts)
+    if not planes.floor.observed:
+        raise ReconstructionError(f"floor plane not found ({planes.floor.reject_reason}); cannot analyse walls")
+    walls = extract_walls(cloud, planes.floor.fit, [lvl.fit for lvl in planes.ceiling_levels], wall_opts)
+    return comp, planes, walls
+
+
 def run_wall_analysis(
     capture: str | Path,
     output_dir: str | Path,
@@ -26,16 +49,8 @@ def run_wall_analysis(
     """Production poses (Ticket 3) -> floor/ceiling planes (Ticket 4) -> structural walls."""
     started = time.perf_counter()
     out = Path(output_dir)
-    comp = compute_drift_ablation(
-        capture, out / "production.ply", recon_opts, drift.DriftOptions(), drift.AcceptanceRules()
-    )
+    comp, planes, walls = compute_walls(capture, out, recon_opts, wall_opts, plane_opts)
     cloud = comp.production_cloud
-    cameras = np.array([T[:3, 3] for T in comp.production_poses])
-    planes = analyze_horizontal_planes(cloud, cameras, plane_opts)
-    if not planes.floor.observed:
-        raise ReconstructionError(f"floor plane not found ({planes.floor.reject_reason}); cannot analyse walls")
-
-    walls = extract_walls(cloud, planes.floor.fit, [lvl.fit for lvl in planes.ceiling_levels], wall_opts)
 
     out.mkdir(parents=True, exist_ok=True)
     if walls.walls:

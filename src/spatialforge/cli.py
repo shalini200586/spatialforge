@@ -242,6 +242,42 @@ def format_walls_report(rep: dict, output_dir) -> str:
     return "\n".join(lines)
 
 
+def format_rooms_report(rep: dict, output_dir) -> str:
+    g = rep["graph"]
+    lines = [
+        f"Capture: {rep['capture']}   pose source: {rep['pose_source']}   floor y = {rep['floor_y_m']:.3f} m"
+        + (f"   ceiling levels: {rep['ceiling_levels_m']} m" if rep["ceiling_levels_m"] else ""),
+        f"Walls consumed {rep['walls_consumed']} (parallel duplicates suppressed {len(rep['suppressed_parallel_walls'])})",
+        f"Corners {rep['corner_count']} ({rep['inferred_corner_count']} inferred), graph {g['nodes']} nodes / {g['edges']} edges, "
+        f"total inferred extension {rep['total_inferred_extension_m']:.2f} m",
+        f"Candidate faces {rep['candidate_faces']}, ACCEPTED ROOMS {rep['accepted_rooms']}, rejected faces {len(rep['rejected_faces'])}",
+        "",
+    ]
+    for r in rep["rooms"]:
+        dims = f"{r['length_m']:.2f} x {r['width_m']:.2f} m ({r['dimension_method']})" if r["length_m"] else "irregular (no length/width)"
+        c = r["ceiling"]
+        if c.get("ceiling_observed"):
+            ceil = f"ceiling {c['ceiling_height_m']:.2f} m (coverage {c['coverage']:.0%})"
+        elif c.get("ambiguous"):
+            ceil = "ceiling AMBIGUOUS"
+        else:
+            ceil = "ceiling not observed"
+        lines += [
+            f"{r['id']}: area {r['area_m2']:.2f} m2 [{r['area_interval_m2'][0]:.2f}, {r['area_interval_m2'][1]:.2f}], "
+            f"perimeter {r['perimeter_m']:.2f} m, {len(r['polygon'])} corners, quality {r['topology_quality']}",
+            f"   dimensions: {dims}; {ceil}",
+            f"   walls: {r['wall_ids']}  lengths {[round(x, 2) for x in r['wall_lengths_m']]}",
+            f"   evidence: strong {r['strong_fraction']:.0%} moderate {r['moderate_fraction']:.0%} weak {r['weak_fraction']:.0%}, "
+            f"inferred extension {r['inferred_extension_total_m']:.2f} m, observed {r['observed_fraction']:.0%}",
+            f"   geometrically adjacent to: {r['adjacent_room_ids'] or 'none'}",
+        ]
+    if rep["property_outer_boundary"]:
+        o = rep["property_outer_boundary"]
+        lines.append(f"Outer boundary of the wall graph (not a room): area {o['area_m2']:.1f} m2")
+    lines += ["", f"Runtime: {rep['runtime_s']:.1f} s", f"Artifacts: {output_dir}"]
+    return "\n".join(lines)
+
+
 def _size_arg(text: str) -> tuple[int, int]:
     try:
         w, h = text.lower().split("x")
@@ -309,12 +345,52 @@ def main(argv: list[str] | None = None) -> int:
     w.add_argument("--voxel-size", type=float, default=0.02, help="voxel size in metres (default 0.02)")
     w.add_argument("--max-wall-tilt", type=float, default=5.0, help="max deviation from vertical in degrees (default 5)")
     w.add_argument("--source-size", type=_size_arg, help="override the image size the intrinsics refer to")
+
+    q = sub.add_parser(
+        "analyze-rooms",
+        help="room polygons, areas, dimensions and ceiling levels from structural walls (no openings yet)",
+    )
+    q.add_argument("path", help="path to the capture folder")
+    q.add_argument("--output-dir", required=True, help="folder for rooms.json, wall_graph.json, rooms_topdown.png")
+    q.add_argument("--frame-step", type=int, default=1, help="use every Nth frame (default 1)")
+    q.add_argument("--max-frames", type=int, default=400, help="cap on frames used, evenly spaced (default 400)")
+    q.add_argument("--min-confidence", type=int, default=2, help="minimum confidence level 0-2 (default 2)")
+    q.add_argument("--voxel-size", type=float, default=0.02, help="voxel size in metres (default 0.02)")
+    q.add_argument("--max-corner-extension", type=float, default=None,
+                   help="largest wall extension allowed to form a corner, metres (default: RoomOptions, 0.5)")
+    q.add_argument("--min-room-area", type=float, default=None, help="smallest accepted room, m2 (default: RoomOptions, 1.2)")
+    q.add_argument("--source-size", type=_size_arg, help="override the image size the intrinsics refer to")
     args = parser.parse_args(argv)
 
     if args.command == "validate-lidar":
         result = validate_lidar_capture(args.path)
         print(format_report(result))
         return 1 if result.status is Status.INVALID else 0
+
+    if args.command == "analyze-rooms":
+        from spatialforge.lidar.rooms import RoomOptions  # rooms_run imports Open3D (via the drift stage)
+        from spatialforge.lidar.rooms_run import run_room_analysis
+
+        options = ReconstructionOptions(
+            frame_step=args.frame_step,
+            max_frames=args.max_frames,
+            min_confidence=args.min_confidence,
+            voxel_size=args.voxel_size,
+            source_size=args.source_size,
+        )
+        overrides = {}
+        if args.max_corner_extension is not None:
+            overrides["max_corner_extension_m"] = args.max_corner_extension
+        if args.min_room_area is not None:
+            overrides["min_room_area_m2"] = args.min_room_area
+        room_options = RoomOptions(**overrides)
+        try:
+            report, _ = run_room_analysis(args.path, args.output_dir, options, room_options)
+        except ReconstructionError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        print(format_rooms_report(report, args.output_dir))
+        return 0
 
     if args.command == "analyze-walls":
         from spatialforge.lidar.walls import WallOptions  # walls_run imports Open3D (via the drift stage)
