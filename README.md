@@ -105,6 +105,38 @@ states `pose_source`. World +Y is vertical; no reorientation is applied.
 
 Walls, rooms, openings and floor area are not implemented yet.
 
+## Structural walls
+
+    python -m spatialforge analyze-walls "C:\spatialforge-data\single_room" --output-dir "C:\temp\walls_room"
+
+Extracts vertical structural walls as metric top-down (X-Z) segments, on the production cloud (corrected or
+original poses as decided by the drift stage) and using the floor/ceiling planes from the horizontal-plane stage.
+
+- **Vertical structure:** only points in a height band above the floor (0.3-2.2 m; floor and accepted ceiling
+  planes excluded) are used. A 5 cm X-Z column counts as "wall-like" only if it holds many points at many
+  different heights, so floors, ceilings, table tops and low furniture cannot form walls.
+- **Lines:** a deterministic Hough transform on those columns (no random sampling), then 3D verification.
+  Each observed segment must be long enough (0.6 m), tall enough (1.0 m span, observed at many heights),
+  reach toward the floor, be near-vertical (5 degrees), fit tightly and follow the wall-like ribbon.
+- **Furniture rejection:** vertical span/coverage, horizontal span, floor contact, plane fit, and structural
+  context: short pieces are kept only if they join a long wall, and short planes far from both dominant wall
+  axes are dropped. Tall wardrobes against a wall can still pass; each wall carries an evidence tier
+  (`strong`/`moderate`/`weak`, a heuristic, not a probability).
+- **Orientation:** a soft Manhattan prior. The dominant axis is the orientation cluster holding the most wall
+  length. A wall snaps to it only if it is within 5 degrees AND snapping moves its ends by at most 10 cm
+  (long walls therefore snap only for small deviations). Raw and snapped orientation are both reported.
+- **Duplicates:** near-parallel, overlapping detections within 30 cm merge unless the points between them show
+  two separate surfaces (a valley in the perpendicular profile). Walls are blurred to ~0.5 m by residual
+  drift, so two real walls closer than ~0.3 m cannot be told apart.
+- **Gaps are kept:** observed segments of one wall stay separate, and gaps up to 2.5 m are recorded in
+  `gaps` for a later opening stage. Pieces further apart are separate walls.
+- **Outputs:** `walls.json` (walls, segments, gaps, residuals, position uncertainty), `wall_candidates.json`
+  (everything rejected, with reasons), `walls_topdown.png`, `wall_inliers.ply`.
+
+Known limitations: no rooms, corners or openings yet; blurred walls make line positions uncertain by several
+centimetres; some parallel duplicates, off-axis lines and furniture planes remain (see the evidence tier and
+`wall_candidates.json`); thresholds were calibrated on three captures and are not production-validated.
+
 ## Tests
 
     python -m pytest

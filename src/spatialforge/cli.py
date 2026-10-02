@@ -212,6 +212,36 @@ def format_planes_report(rep: dict, output_dir) -> str:
     return "\n".join(lines)
 
 
+def format_walls_report(rep: dict, output_dir) -> str:
+    lines = [
+        f"Capture: {rep['capture']}   frames: {rep['frames_used']} of {rep['frames_available']}   "
+        f"points: {rep['point_count']} ({rep['zone_point_count']} in the wall height band)",
+        f"Pose source: {rep['pose_source']}   floor y = {rep['floor_y_m']:.3f} m"
+        + (f"   ceiling levels: {rep['ceiling_levels_m']} m" if rep["ceiling_levels_m"] else ""),
+        f"Dominant directions: {[round(d, 1) for d in rep['dominant_directions_deg']]} deg "
+        f"(strength {rep['manhattan_strength']:.2f})",
+        "",
+        f"Candidate lines {rep['candidate_lines']}, duplicate lines merged {rep['merged_duplicate_lines']}, "
+        f"duplicate segments suppressed {rep['suppressed_duplicate_segments']}, "
+        f"rejected candidates {rep['rejected_candidates']}",
+        f"ACCEPTED: {rep['accepted_walls']} walls, {rep['accepted_segments']} observed segments",
+        "",
+        "  id        length  observed  orient  snap  vspan  inliers  resid p50/p90   pos.unc  evidence  gaps(m)",
+    ]
+    for w in rep["walls"]:
+        gaps = ",".join(f"{g['length_m']:.2f}" for g in w["gaps"]) or "-"
+        lines.append(
+            f"  {w['id']}  {w['length_m']:6.2f}  {w['observed_length_m']:7.2f}  {w['orientation_deg']:6.1f}  "
+            f"{'yes' if w['snapped'] else 'no ':>4}  {w['vertical_span_m']:5.2f}  {w['inlier_count']:7d}  "
+            f"{w['residual_median_m']:.3f}/{w['residual_p90_m']:.3f}   {w['position_uncertainty_m']:.3f}   "
+            f"{w['evidence']:<8}  {gaps}"
+        )
+    if rep["warnings"]:
+        lines += ["", "Warnings:"] + [f"  - {x}" for x in rep["warnings"]]
+    lines += ["", f"Runtime: {rep['runtime_s']:.1f} s", f"Artifacts: {output_dir}"]
+    return "\n".join(lines)
+
+
 def _size_arg(text: str) -> tuple[int, int]:
     try:
         w, h = text.lower().split("x")
@@ -266,12 +296,44 @@ def main(argv: list[str] | None = None) -> int:
     h.add_argument("--min-ceiling-height", type=float, default=2.0, help="ceiling search range, metres above floor")
     h.add_argument("--max-ceiling-height", type=float, default=4.5, help="ceiling search range, metres above floor")
     h.add_argument("--source-size", type=_size_arg, help="override the image size the intrinsics refer to")
+
+    w = sub.add_parser(
+        "analyze-walls",
+        help="extract structural vertical walls as metric 2D segments (no rooms or openings yet)",
+    )
+    w.add_argument("path", help="path to the capture folder")
+    w.add_argument("--output-dir", required=True, help="folder for walls.json, walls_topdown.png, wall_inliers.ply")
+    w.add_argument("--frame-step", type=int, default=1, help="use every Nth frame (default 1)")
+    w.add_argument("--max-frames", type=int, default=400, help="cap on frames used, evenly spaced (default 400)")
+    w.add_argument("--min-confidence", type=int, default=2, help="minimum confidence level 0-2 (default 2)")
+    w.add_argument("--voxel-size", type=float, default=0.02, help="voxel size in metres (default 0.02)")
+    w.add_argument("--max-wall-tilt", type=float, default=5.0, help="max deviation from vertical in degrees (default 5)")
+    w.add_argument("--source-size", type=_size_arg, help="override the image size the intrinsics refer to")
     args = parser.parse_args(argv)
 
     if args.command == "validate-lidar":
         result = validate_lidar_capture(args.path)
         print(format_report(result))
         return 1 if result.status is Status.INVALID else 0
+
+    if args.command == "analyze-walls":
+        from spatialforge.lidar.walls import WallOptions  # walls_run imports Open3D (via the drift stage)
+        from spatialforge.lidar.walls_run import run_wall_analysis
+
+        options = ReconstructionOptions(
+            frame_step=args.frame_step,
+            max_frames=args.max_frames,
+            min_confidence=args.min_confidence,
+            voxel_size=args.voxel_size,
+            source_size=args.source_size,
+        )
+        try:
+            report, _ = run_wall_analysis(args.path, args.output_dir, options, WallOptions(max_tilt_deg=args.max_wall_tilt))
+        except ReconstructionError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        print(format_walls_report(report, args.output_dir))
+        return 0
 
     if args.command == "analyze-horizontal-planes":
         from spatialforge.lidar.planes import PlaneOptions  # run_plane_analysis imports Open3D (via drift)

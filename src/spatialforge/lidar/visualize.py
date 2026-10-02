@@ -1,4 +1,4 @@
-"""Top-down (X-Z) density images for comparing point clouds (Pillow + NumPy only)."""
+﻿"""Top-down (X-Z) density images for comparing point clouds (Pillow + NumPy only)."""
 
 from __future__ import annotations
 
@@ -91,6 +91,60 @@ def render_side_projection(points: np.ndarray, analysis, path: Path) -> None:
     for y in np.arange(y0, y1 + 1, 1.0):
         d.text((MARGIN - 30, MARGIN + h - 1 - int((y - y0) * ppm) - 5), f"{y:.0f}", fill="black")
     d.text((8, 8), "Side projection X-Y (m), Y up, all points projected", fill="black")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    canvas.save(path)
+
+
+WALL_COLOURS = [(220, 30, 30), (30, 90, 220), (20, 150, 60), (200, 20, 200), (0, 150, 160), (110, 60, 190)]
+REJECTED_COLOUR = (150, 100, 40)  # brown: never used for accepted walls
+
+
+def render_walls_topdown(cloud: np.ndarray, analysis, bounds: tuple[float, float, float, float], path: Path) -> None:
+    """Light point cloud (X-Z) with accepted wall segments (thick, with IDs and endpoints),
+    gaps between segments of one wall (dotted blue) and rejected candidates (thin orange)."""
+    x0, x1, z0, z1 = bounds
+    w, h = int((x1 - x0) * PIXELS_PER_METRE), int((z1 - z0) * PIXELS_PER_METRE)
+    col = ((cloud[:, 0] - x0) * PIXELS_PER_METRE).astype(int)
+    row = h - 1 - ((cloud[:, 2] - z0) * PIXELS_PER_METRE).astype(int)
+    keep = (col >= 0) & (col < w) & (row >= 0) & (row < h)
+    counts = np.zeros((h, w), dtype=np.int32)
+    np.add.at(counts, (row[keep], col[keep]), 1)
+    gray = (255 - 110 * np.clip(np.log1p(counts) / np.log1p(20), 0, 1)).astype(np.uint8)  # deliberately light
+    canvas = Image.new("RGB", (w + 2 * MARGIN, h + 2 * MARGIN), "white")
+    canvas.paste(Image.fromarray(gray).convert("RGB"), (MARGIN, MARGIN))
+    d = ImageDraw.Draw(canvas)
+
+    def px(p):
+        return (MARGIN + (p[0] - x0) * PIXELS_PER_METRE, MARGIN + h - 1 - (p[1] - z0) * PIXELS_PER_METRE)
+
+    d.rectangle([MARGIN - 1, MARGIN - 1, MARGIN + w, MARGIN + h], outline="black")
+    for x in np.arange(x0, x1 + 1, 1.0):
+        d.text((MARGIN + int((x - x0) * PIXELS_PER_METRE) - 8, MARGIN + h + 8), f"{x:.0f}", fill="black")
+    for z in np.arange(z0, z1 + 1, 1.0):
+        d.text((MARGIN - 30, MARGIN + h - 1 - int((z - z0) * PIXELS_PER_METRE) - 5), f"{z:.0f}", fill="black")
+    for item in analysis.rejected:
+        segs = item["segments"] if item["kind"] == "line" and isinstance(item["segments"], list) else [item]
+        for s in segs:
+            if "start" in s:
+                d.line([px(s["start"]), px(s["end"])], fill=REJECTED_COLOUR, width=1)
+    for k, wall in enumerate(analysis.walls):
+        colour = WALL_COLOURS[k % len(WALL_COLOURS)]
+        for s in wall.segments:
+            a, b = px(s.start), px(s.end)
+            d.line([a, b], fill=colour, width=4)
+            for p in (a, b):
+                d.ellipse([p[0] - 4, p[1] - 4, p[0] + 4, p[1] + 4], fill=colour, outline="black")
+        for g in wall.gaps:
+            a, b = px(g["start"]), px(g["end"])
+            n = max(2, int(np.hypot(b[0] - a[0], b[1] - a[1]) / 8))
+            for i in range(0, n, 2):
+                p0 = (a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n)
+                p1 = (a[0] + (b[0] - a[0]) * (i + 1) / n, a[1] + (b[1] - a[1]) * (i + 1) / n)
+                d.line([p0, p1], fill=(40, 40, 255), width=2)
+        mid = px(((wall.start[0] + wall.end[0]) / 2, (wall.start[1] + wall.end[1]) / 2))
+        d.text((mid[0] + 6, mid[1] - 14), f"{wall.id[-3:]} {wall.length_m:.1f}m", fill=colour)
+    d.text((8, 8), f"Structural walls (accepted: {len(analysis.walls)} walls, {analysis.segment_count} segments)", fill="black")
+    d.text((8, 24), "thick = accepted segment, dotted blue = observed gap, thin brown = rejected candidate, X-Z metres", fill=(90, 90, 90))
     path.parent.mkdir(parents=True, exist_ok=True)
     canvas.save(path)
 
