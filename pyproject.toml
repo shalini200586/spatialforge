@@ -9,7 +9,9 @@ description = "SpatialForge: LiDAR capture validation and metadata inspection"
 requires-python = ">=3.11"
 # numpy: depth/confidence statistics. Pillow: decoding 16-bit grayscale PNGs
 # (the standard library cannot read PNG). Both are small and CPU-only.
-dependencies = ["numpy", "Pillow"]
+# open3d: point-to-plane ICP, normal estimation and pose-graph optimisation for drift correction
+# (CPU-only wheel; replaces a large custom SLAM implementation).
+dependencies = ["numpy", "Pillow", "open3d>=0.18"]
 
 [project.optional-dependencies]
 test = ["pytest"]

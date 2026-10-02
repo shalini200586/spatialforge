@@ -49,6 +49,62 @@ Options: `--frame-step 30` (every Nth frame), `--max-frames 60` (evenly spaced c
 - **Limitations:** no floor/wall/ceiling extraction, no reorientation into a floor-plan frame, and no drift
   correction yet. Odometry drift is not removed, so large scans may show some misalignment.
 
+## Drift correction ablation
+
+    python -m spatialforge correct-lidar-drift "C:\spatialforge-data\single_scan_floor_only" --output-dir "C:\temp\drift_floor_only"
+
+The supplied odometry is not simply trusted: the command registers the depth clouds of sampled frames,
+optimises a pose graph, and compares a baseline reconstruction (OFF, supplied poses) with a corrected one
+(ON) on identical frames, filtering and voxel size. Needs Open3D (CPU).
+
+Method: odometry gives the initial guess; point-to-plane ICP refines consecutive sampled frames
+(5 cm registration voxel); a few conservative loop closures are added where the camera returns to an
+earlier place (far apart in the sequence, close in odometry space, similar heading) and ICP passes
+stricter gates; Open3D optimises the pose graph. Every consecutive pair keeps an odometry edge as an
+anchor, sequential ICP edges get a small weight and loop closures full weight. Roll/pitch stay as supplied
+(only heading and position may change). All thresholds are in `DriftOptions` / `AcceptanceRules`
+(`lidar/drift.py`) and are written into the report.
+
+Safe fallback: an ICP result that fails its fitness / RMSE / correction-size gates is rejected and that
+pair keeps its odometry relation. The corrected poses are only used if the before/after metrics agree
+(no metric meaningfully worse, at least one meaningfully better, footprint and correction sizes plausible);
+otherwise the report says `"accepted": false` and `"production_poses": "original"`.
+
+Artifacts in `--output-dir`: `before.ply`, `after.ply`, `before_topdown.png`, `after_topdown.png`
+(same bounds, scale and contrast), `drift_report.json`, `trajectory_before.csv`, `trajectory_after.csv`.
+`before.ply` is identical to `reconstruct-lidar` with the same options. `after.ply` is always the corrected
+candidate, even when rejected, so the ablation can be inspected.
+
+Use enough frames for neighbouring frames to overlap (default `--max-frames 400`; 80 frames of a 9,745-frame
+capture were too far apart for ICP to register most pairs). Structural extraction is not implemented yet.
+
+## Floor and ceiling planes
+
+    python -m spatialforge analyze-horizontal-planes "C:\spatialforge-data\single_scan_with_ceiling" --output-dir "C:\temp\planes_with_ceiling"
+
+Detects the structural floor and ceiling(s) and measures ceiling height. It runs on the production cloud:
+the drift stage (above) decides per capture whether corrected or original poses are used, and the report
+states `pose_source`. World +Y is vertical; no reorientation is applied.
+
+- **Floor:** peaks in the vertical (Y) density profile below the camera path are fitted with a robust
+  (Tukey-weighted) plane `y = p*x + q*z + r`, refitted using only X-Z columns with solid coverage. The
+  lowest peak with at least half the best solid area is the floor. No random sampling anywhere.
+- **Ceiling:** candidates must lie 2.0-4.5 m above the floor (`PlaneOptions`) and above the camera path,
+  be tilted less than 5 degrees, have a tight fit, and cover at least 3 m2 (and 10% of the floor's area) of
+  *solid* X-Z area: coverage is measured on a 10 cm grid after eroding by one cell, so thin wall lines,
+  lamps and shelf tops do not count. Otherwise `ceiling.observed` is false and no height is reported.
+- **Several levels:** every accepted level is listed (a building can have ceilings at different heights), the
+  largest is the primary, and a warning explains that assigning levels to rooms needs room segmentation.
+- **Height:** perpendicular distance from the ceiling plane's inlier centroid to the floor plane.
+- **Uncertainty:** interval from deterministic subsets (interleaved blocks and regional quadrants) plus fit
+  scatter, with surface errors counted per 1 m patch; `confidence` falls as the interval widens or the
+  supported area shrinks. It excludes the depth-scale assumption (0.001 m per unit). It is a measured
+  consistency estimate, not a calibrated probability.
+- **Outputs** in `--output-dir`: `horizontal_planes.json`, `vertical_profile.png`, `side_projection.png`,
+  `floor_inliers.ply`, `ceiling_inliers.ply` (all accepted levels, only if observed).
+
+Walls, rooms, openings and floor area are not implemented yet.
+
 ## Tests
 
     python -m pytest
