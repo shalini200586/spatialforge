@@ -173,6 +173,45 @@ def format_drift_report(rep: dict, output_dir) -> str:
     return "\n".join(lines)
 
 
+def format_planes_report(rep: dict, output_dir) -> str:
+    f = rep["floor"]
+    lines = [
+        f"Capture: {rep['capture']}   frames: {rep['frames_used']} of {rep['frames_available']}   points: {rep['point_count']}",
+        f"Pose source: {rep['pose_source']}" + (f"  (drift correction rejected: {rep['drift_fallback_reason']})" if rep["drift_fallback_reason"] else ""),
+        f"Camera path Y range: {rep['camera_y_range_m'][0]:.2f} .. {rep['camera_y_range_m'][1]:.2f} m",
+        "",
+    ]
+    if f["observed"]:
+        lines += [
+            f"FLOOR observed: height y = {f['height_m']:.3f} m, tilt {f['tilt_deg']:.2f} deg",
+            f"  plane [a,b,c,d] = {[round(v, 4) for v in f['plane']]}",
+            f"  inliers {f['inlier_count']} ({f['inlier_ratio']:.1%} of points), residual median {f['residual_median_m']:.4f} m, "
+            f"p90 {f['residual_p90_m']:.4f} m, robust sigma {f['sigma_m']:.4f} m",
+            f"  solid area {f['solid_area_m2']:.1f} m2 ({f['coverage_ratio']:.0%} of scanned footprint), "
+            f"extent {f['x_extent_m']:.1f} x {f['z_extent_m']:.1f} m",
+        ]
+    else:
+        lines.append(f"FLOOR not observed: {f['reject_reason']}")
+    levels = rep["ceiling_levels"]
+    if not levels:
+        lines.append(f"CEILING not observed: {rep['ceiling']['reject_reason']}")
+    for k, lvl in enumerate(levels, 1):
+        h = lvl["height"]
+        lines += [
+            f"CEILING level {k}{' (largest)' if k == 1 else ''}: y = {lvl['height_m']:.3f} m, tilt {lvl['tilt_deg']:.2f} deg",
+            f"  inliers {lvl['inlier_count']} ({lvl['inlier_ratio']:.1%} of points), residual median {lvl['residual_median_m']:.4f} m, "
+            f"p90 {lvl['residual_p90_m']:.4f} m, robust sigma {lvl['sigma_m']:.4f} m",
+            f"  solid area {lvl['solid_area_m2']:.1f} m2 ({lvl['coverage_ratio']:.0%} of scanned footprint), "
+            f"extent {lvl['x_extent_m']:.1f} x {lvl['z_extent_m']:.1f} m",
+            f"  CEILING HEIGHT {h['value_m']:.3f} m   interval [{h['confidence_interval_m'][0]:.3f}, {h['confidence_interval_m'][1]:.3f}] m   "
+            f"confidence {h['confidence']:.2f}",
+        ]
+    if rep["warnings"]:
+        lines += ["", f"Warnings ({len(rep['warnings'])}):"] + [f"  - {w}" for w in rep["warnings"]]
+    lines += ["", f"Runtime: {rep['runtime_s']:.1f} s", f"Artifacts: {output_dir}"]
+    return "\n".join(lines)
+
+
 def _size_arg(text: str) -> tuple[int, int]:
     try:
         w, h = text.lower().split("x")
@@ -212,12 +251,51 @@ def main(argv: list[str] | None = None) -> int:
     d.add_argument("--reg-voxel", type=float, default=0.05, help="registration voxel size in metres (default 0.05)")
     d.add_argument("--no-loop-closure", action="store_true", help="disable loop-closure constraints")
     d.add_argument("--source-size", type=_size_arg, help="override the image size the intrinsics refer to")
+
+    h = sub.add_parser(
+        "analyze-horizontal-planes",
+        help="detect floor and ceiling planes and measure ceiling height with a confidence interval",
+    )
+    h.add_argument("path", help="path to the capture folder")
+    h.add_argument("--output-dir", required=True, help="folder for horizontal_planes.json, plots and inlier PLYs")
+    h.add_argument("--frame-step", type=int, default=1, help="use every Nth frame (default 1)")
+    h.add_argument("--max-frames", type=int, default=400, help="cap on frames used, evenly spaced (default 400)")
+    h.add_argument("--min-confidence", type=int, default=2, help="minimum confidence level 0-2 (default 2)")
+    h.add_argument("--voxel-size", type=float, default=0.02, help="voxel size in metres (default 0.02)")
+    h.add_argument("--max-plane-tilt", type=float, default=5.0, help="max tilt from horizontal in degrees (default 5)")
+    h.add_argument("--min-ceiling-height", type=float, default=2.0, help="ceiling search range, metres above floor")
+    h.add_argument("--max-ceiling-height", type=float, default=4.5, help="ceiling search range, metres above floor")
+    h.add_argument("--source-size", type=_size_arg, help="override the image size the intrinsics refer to")
     args = parser.parse_args(argv)
 
     if args.command == "validate-lidar":
         result = validate_lidar_capture(args.path)
         print(format_report(result))
         return 1 if result.status is Status.INVALID else 0
+
+    if args.command == "analyze-horizontal-planes":
+        from spatialforge.lidar.planes import PlaneOptions  # run_plane_analysis imports Open3D (via drift)
+        from spatialforge.lidar.planes_run import run_plane_analysis
+
+        options = ReconstructionOptions(
+            frame_step=args.frame_step,
+            max_frames=args.max_frames,
+            min_confidence=args.min_confidence,
+            voxel_size=args.voxel_size,
+            source_size=args.source_size,
+        )
+        plane_options = PlaneOptions(
+            max_tilt_deg=args.max_plane_tilt,
+            min_ceiling_height_m=args.min_ceiling_height,
+            max_ceiling_height_m=args.max_ceiling_height,
+        )
+        try:
+            report, _ = run_plane_analysis(args.path, args.output_dir, options, plane_options)
+        except ReconstructionError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        print(format_planes_report(report, args.output_dir))
+        return 0
 
     if args.command == "correct-lidar-drift":
         from spatialforge.lidar.drift import DriftOptions  # imports Open3D, so only loaded here

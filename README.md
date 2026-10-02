@@ -78,6 +78,33 @@ candidate, even when rejected, so the ablation can be inspected.
 Use enough frames for neighbouring frames to overlap (default `--max-frames 400`; 80 frames of a 9,745-frame
 capture were too far apart for ICP to register most pairs). Structural extraction is not implemented yet.
 
+## Floor and ceiling planes
+
+    python -m spatialforge analyze-horizontal-planes "C:\spatialforge-data\single_scan_with_ceiling" --output-dir "C:\temp\planes_with_ceiling"
+
+Detects the structural floor and ceiling(s) and measures ceiling height. It runs on the production cloud:
+the drift stage (above) decides per capture whether corrected or original poses are used, and the report
+states `pose_source`. World +Y is vertical; no reorientation is applied.
+
+- **Floor:** peaks in the vertical (Y) density profile below the camera path are fitted with a robust
+  (Tukey-weighted) plane `y = p*x + q*z + r`, refitted using only X-Z columns with solid coverage. The
+  lowest peak with at least half the best solid area is the floor. No random sampling anywhere.
+- **Ceiling:** candidates must lie 2.0-4.5 m above the floor (`PlaneOptions`) and above the camera path,
+  be tilted less than 5 degrees, have a tight fit, and cover at least 3 m2 (and 10% of the floor's area) of
+  *solid* X-Z area: coverage is measured on a 10 cm grid after eroding by one cell, so thin wall lines,
+  lamps and shelf tops do not count. Otherwise `ceiling.observed` is false and no height is reported.
+- **Several levels:** every accepted level is listed (a building can have ceilings at different heights), the
+  largest is the primary, and a warning explains that assigning levels to rooms needs room segmentation.
+- **Height:** perpendicular distance from the ceiling plane's inlier centroid to the floor plane.
+- **Uncertainty:** interval from deterministic subsets (interleaved blocks and regional quadrants) plus fit
+  scatter, with surface errors counted per 1 m patch; `confidence` falls as the interval widens or the
+  supported area shrinks. It excludes the depth-scale assumption (0.001 m per unit). It is a measured
+  consistency estimate, not a calibrated probability.
+- **Outputs** in `--output-dir`: `horizontal_planes.json`, `vertical_profile.png`, `side_projection.png`,
+  `floor_inliers.ply`, `ceiling_inliers.ply` (all accepted levels, only if observed).
+
+Walls, rooms, openings and floor area are not implemented yet.
+
 ## Tests
 
     python -m pytest

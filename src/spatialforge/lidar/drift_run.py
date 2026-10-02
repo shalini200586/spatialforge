@@ -6,15 +6,17 @@ import csv
 import json
 import time
 from collections import Counter
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import numpy as np
 
 from spatialforge.lidar import drift, geometry
 from spatialforge.lidar.reconstruction import (
+    CaptureContext,
     ReconstructionError,
     ReconstructionOptions,
+    ReconstructionResult,
     build_world_cloud,
     load_frame_points,
     pose_rotation,
@@ -80,20 +82,45 @@ def _write_trajectory(path: Path, frames: list[int], poses: list[np.ndarray]) ->
             w.writerow([fid, *(f"{v:.6f}" for v in T[:3, 3]), *(f"{v:.8f}" for v in T[:3, :3].ravel())])
 
 
-def run_drift_ablation(
-    capture: str | Path,
-    output_dir: str | Path,
-    recon_opts: ReconstructionOptions,
-    drift_opts: drift.DriftOptions | None = None,
-    rules: drift.AcceptanceRules | None = None,
-) -> dict:
-    """Run baseline and corrected reconstructions on the same frames; write artifacts; return the report."""
-    dopts = drift_opts or drift.DriftOptions()
-    rules = rules or drift.AcceptanceRules()
-    out = Path(output_dir)
-    started = time.perf_counter()
+@dataclass
+class DriftComputation:
+    """Everything the drift stage produces, before any files are written."""
 
-    ctx, base = prepare_capture(capture, out / "before.ply", recon_opts)
+    ctx: CaptureContext
+    base: ReconstructionResult
+    frames: list[int]
+    original: list[np.ndarray]
+    correction: drift.CorrectionResult
+    before_cloud: np.ndarray
+    after_cloud: np.ndarray
+    before: dict
+    after: dict
+    accepted: bool
+    fallback_reason: str | None
+    changes: dict
+
+    @property
+    def pose_source(self) -> str:
+        return "corrected" if self.accepted else "original"
+
+    @property
+    def production_cloud(self) -> np.ndarray:
+        return self.after_cloud if self.accepted else self.before_cloud
+
+    @property
+    def production_poses(self) -> list[np.ndarray]:
+        return self.correction.corrected_poses if self.accepted else self.original
+
+
+def compute_drift_ablation(
+    capture: str | Path,
+    output_path: Path,
+    recon_opts: ReconstructionOptions,
+    dopts: drift.DriftOptions,
+    rules: drift.AcceptanceRules,
+) -> DriftComputation:
+    """Ticket 3 logic: baseline vs corrected poses on the same frames, accepted or rejected by the rules."""
+    ctx, base = prepare_capture(capture, output_path, recon_opts)
     frames = ctx.frames
     if len(frames) < 3:
         raise ReconstructionError("need at least 3 sampled frames for drift correction; lower --frame-step")
@@ -115,6 +142,29 @@ def run_drift_ablation(
     before = drift.compute_metrics(metric_points, original, before_cloud)
     after = drift.compute_metrics(metric_points, correction.corrected_poses, after_cloud)
     accepted, fallback_reason, changes = drift.judge_correction(before, after, correction, rules)
+    return DriftComputation(
+        ctx, base, frames, original, correction, before_cloud, after_cloud, before, after,
+        accepted, fallback_reason, changes,
+    )
+
+
+def run_drift_ablation(
+    capture: str | Path,
+    output_dir: str | Path,
+    recon_opts: ReconstructionOptions,
+    drift_opts: drift.DriftOptions | None = None,
+    rules: drift.AcceptanceRules | None = None,
+) -> dict:
+    """Run baseline and corrected reconstructions on the same frames; write artifacts; return the report."""
+    dopts = drift_opts or drift.DriftOptions()
+    rules = rules or drift.AcceptanceRules()
+    out = Path(output_dir)
+    started = time.perf_counter()
+
+    comp = compute_drift_ablation(capture, out / "before.ply", recon_opts, dopts, rules)
+    ctx, base, frames, original, correction = comp.ctx, comp.base, comp.frames, comp.original, comp.correction
+    before_cloud, after_cloud, before, after = comp.before_cloud, comp.after_cloud, comp.before, comp.after
+    accepted, fallback_reason, changes = comp.accepted, comp.fallback_reason, comp.changes
 
     # Artifacts. after.ply is always the corrected candidate, so the ablation is inspectable even
     # when it is rejected; `production_poses` in the report says which poses should actually be used.
