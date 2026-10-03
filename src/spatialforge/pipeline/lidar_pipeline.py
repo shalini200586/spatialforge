@@ -127,6 +127,9 @@ def run_lidar_stages(capture: str | Path, opts: PipelineOptions) -> StageOutputs
     )
     run_structure_stages(scene, out)
     out.parameters["depth_scale_m_per_unit"] = DEPTH_SCALE_M_PER_UNIT
+    from spatialforge.damage.evidence import lidar_evidence_fn
+
+    out.evidence_fn = lidar_evidence_fn(root, comp, out)
     return out
 
 
@@ -175,8 +178,35 @@ def _counts(prop_dict: dict, so: StageOutputs) -> dict:
     }
 
 
+def _run_damage(prop, so: StageOutputs, out_dir: Path) -> None:
+    """Visible-damage analysis on the tier's RGB evidence. Never fatal: a failure is a warning and an empty damage layer."""
+    rec = StageRecord("damage_analysis", "ok")
+    t0 = time.perf_counter()
+    try:
+        from spatialforge.damage.analyze import analyze_damage, apply_to_property
+
+        images = so.evidence_fn()
+        if not images:
+            rec.status = "skipped"
+            rec.warnings = ["no RGB evidence with usable geometry was available for damage analysis"]
+        else:
+            outcome = analyze_damage(prop, images, out_dir / "diagnostics" / "damage")
+            apply_to_property(prop, outcome, len(images))
+            rec.warnings = list(outcome.warnings)
+            rec.details = {"images": len(images), "detections": len(outcome.regions),
+                           "with_metric_extent": outcome.report["detections_with_metric_extent"],
+                           "concealed_flags": len(outcome.flags), "scope_items": len(outcome.items)}
+            rec.status = "warning" if rec.warnings else "ok"
+    except Exception as exc:
+        rec.status, rec.error = "failed", f"{type(exc).__name__}: {exc}"
+        prop.warnings.append(f"Damage analysis failed and was skipped ({type(exc).__name__}: {exc}); the damage layer is empty.")
+    rec.seconds = time.perf_counter() - t0
+    prop.timing["damage_analysis_s"] = round(rec.seconds, 3)
+    so.stages.append(rec)
+
+
 def process_capture(capture: str | Path, output: str | Path, options: PipelineOptions | None = None,
-                    stages_fn=None, tier: str = "lidar") -> PipelineResult:
+                    stages_fn=None, tier: str = "lidar", damage: bool = True) -> PipelineResult:
     """Run the pipeline and write property.json, plan.png, run_report.json and diagnostics/.
 
     `stages_fn(capture, options) -> StageOutputs` is injectable so tests can supply stage outputs.
@@ -228,6 +258,8 @@ def process_capture(capture: str | Path, output: str | Path, options: PipelineOp
 
     try:
         prop = so.prebuilt_property if so.prebuilt_property is not None else assemble_property(so)
+        if damage and so.evidence_fn is not None:
+            _run_damage(prop, so, out_dir)
         t_render = time.perf_counter()
         render_info = render_plan(prop, out_dir / "plan.png", f"SpatialForge floor plan — {so.capture_name}")
         prop.timing["render_plan_s"] = round(time.perf_counter() - t_render, 3)

@@ -21,6 +21,9 @@ dependencies = ["numpy", "Pillow", "open3d>=0.18"]
 #   torch + transformers:   Depth Anything V2 Metric-Indoor-Small (metric monocular depth)
 #   truststore (optional):  use the OS certificate store when downloading weights behind a TLS-inspecting proxy
 video = ["opencv-python-headless>=4.8", "pycolmap>=4.0", "torch>=2.2", "transformers>=4.45", "huggingface_hub"]
+# Visible-damage analysis (cracks, stains): deterministic OpenCV image processing, no model weights. Without it `process`
+# still runs and reports that the damage analysis could not run.
+damage = ["opencv-python-headless>=4.8"]
 test = ["pytest"]
 
 [project.scripts]

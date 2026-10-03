@@ -398,6 +398,10 @@ def run_video_stages(video: str | Path, opts: VideoOptions) -> StageOutputs:
         out.debug["cloud"] = cloud
         out.debug["run_report_extra"]["video"] = extra
         run_structure_stages(scene, out, StructureConfig())
+        from spatialforge.damage.evidence import video_evidence_fn
+
+        frame_of = {k.file: k.frame_index for k in kres.keyframes}
+        out.evidence_fn = video_evidence_fn(kdir, names, T_up, cam, out, frame_of)
         return out
     finally:
         shutil.rmtree(workspace, ignore_errors=True)

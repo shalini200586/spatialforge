@@ -71,6 +71,8 @@ class PhotoRoomResult:
     sparse: np.ndarray | None = None
     stages: list[StageRecord] = field(default_factory=list)
     seconds: float = 0.0
+    floor_y_m: float | None = None  # height of the floor in this room's local frame
+    cameras: dict = field(default_factory=dict)  # image name -> SfmCameraInfo
 
     @property
     def usable(self) -> bool:
@@ -218,4 +220,4 @@ def reconstruct_room(room, index: int, run: SfmRun, depth_for, opts: PhotoRoomOp
         index, room.canonical_id, room.source_label, room.folder, names, "reconstructed", q, reasons, prop.warnings + warnings,
         sfm=sfm_d, scale=scale_d, gravity=grav.to_dict(), uncertainty=unc_d, rel_sigma=rel, prop=prop, primary_room_id=primary,
         ambiguity=ambiguity, poses=T_up, cloud=cloud, sparse=(run.points_xyz * s) @ R_up.T - shift, stages=stages,
-        seconds=time.perf_counter() - t0)
+        seconds=time.perf_counter() - t0, floor_y_m=out.floor_y_m, cameras={n: run.cameras[n] for n in reg})

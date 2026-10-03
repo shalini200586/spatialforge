@@ -249,18 +249,61 @@ class Opening:
         }
 
 
+DAMAGE_CLASSES = ("crack", "stain")
+SURFACE_TYPES = ("wall", "floor", "ceiling")
+
+
 @dataclass
 class DamageRegion:
-    """Placeholder for the damage layer (not implemented yet): the list in the property stays empty."""
+    """One visible-damage detection, mapped onto a structural surface when camera geometry allows.
+
+    `confidence` is a heuristic score in [0, 1] (not a probability); `quality` is the qualitative rating. Metric extents are
+    None unless the region could be projected onto a surface reliably (then `metric_reliable` is True).
+    """
 
     id: str
-    polygon: list[Point2D]
-    damage_type: str
-    confidence: float | None = None
+    damage_class: str  # crack | stain
+    confidence: float
+    quality: str
+    source: dict  # {image_id, tier, frame_index | None, image_size [w, h]}
+    image_region: dict  # {bbox [x0, y0, x1, y1], polygon [[x, y], ...], area_px}  (pixels of the source image)
+    room_id: str | None = None
+    surface_id: str | None = None  # a wall id, or "floor:<room>" / "ceiling:<room>"
+    surface_type: str | None = None
+    width: Measurement | None = None  # m (wall: along the wall; floor/ceiling: major axis)
+    height: Measurement | None = None  # m (wall: vertical; floor/ceiling: minor axis)
+    area: Measurement | None = None  # m2
+    length: Measurement | None = None  # m, extent along the principal axis (crack length)
+    surface_extent: dict | None = None  # {u_min, u_max, v_min, v_max} in metres in the surface frame (wall: v = height above floor)
+    metric_reliable: bool = False
+    other_sources: list[dict] = field(default_factory=list)  # further views of the same damage (merged)
+    warnings: list[str] = field(default_factory=list)
+
+    def __post_init__(self):
+        if self.damage_class not in DAMAGE_CLASSES:
+            raise ModelError(f"damage class must be one of {DAMAGE_CLASSES}, got {self.damage_class!r}")
+        self.confidence = _finite(self.confidence, "damage confidence")
+        if not 0.0 <= self.confidence <= 1.0:
+            raise ModelError(f"damage confidence {self.confidence} is outside [0, 1]")
+        if self.quality not in QUALITIES:
+            raise ModelError(f"damage quality must be one of {QUALITIES}")
+        if self.surface_type is not None and self.surface_type not in SURFACE_TYPES:
+            raise ModelError(f"surface type must be one of {SURFACE_TYPES}")
+        metric = [m for m in (self.width, self.height, self.area, self.length) if m is not None]
+        if metric and (self.surface_id is None or not self.metric_reliable):
+            raise ModelError("a metric extent needs a surface and a reliable projection")
+        if any(m.value < 0 for m in metric):
+            raise ModelError("damage extents cannot be negative")
 
     def to_dict(self) -> dict:
-        return {"id": self.id, "polygon": [p.to_dict() for p in self.polygon], "damage_type": self.damage_type,
-                "confidence": self.confidence}
+        opt = lambda m: None if m is None else m.to_dict()  # noqa: E731
+        return {
+            "damage_id": self.id, "class": self.damage_class, "confidence": self.confidence, "quality": self.quality,
+            "source": self.source, "image_region": self.image_region, "room_id": self.room_id, "surface_id": self.surface_id,
+            "surface_type": self.surface_type, "width_m": opt(self.width), "height_m": opt(self.height), "area_m2": opt(self.area),
+            "length_m": opt(self.length), "surface_extent": self.surface_extent, "metric_reliable": self.metric_reliable,
+            "other_sources": self.other_sources, "warnings": self.warnings,
+        }
 
 
 @dataclass
@@ -322,6 +365,28 @@ class Property:
             for rid in o.room_ids + [c for c in o.connects if c != UNMODELLED]:
                 if rid not in room_ids:
                     raise ModelError(f"opening {o.id} references unknown room {rid}")
+        damage_ids = [d.id for d in self.damage]
+        if len(damage_ids) != len(set(damage_ids)):
+            raise ModelError("duplicate damage ids")
+        for d in self.damage:
+            if d.room_id is not None and d.room_id not in room_ids:
+                raise ModelError(f"damage {d.id} references unknown room {d.room_id}")
+            if d.surface_id is not None:
+                kind, _, rid = d.surface_id.partition(":")
+                ok = d.surface_id in wall_ids or (kind in ("floor", "ceiling") and rid in room_ids)
+                if not ok:
+                    raise ModelError(f"damage {d.id} references unknown surface {d.surface_id}")
+        known = set(damage_ids)
+        flag_ids = [f.get("flag_id") for f in self.concealed_damage_flags]
+        for f in self.concealed_damage_flags:
+            for did in f.get("damage_ids", []):
+                if did not in known:
+                    raise ModelError(f"concealed flag {f.get('flag_id')} references unknown damage {did}")
+        for it in self.scope_line_items:
+            if it.get("damage_id") is not None and it["damage_id"] not in known:
+                raise ModelError(f"scope item {it.get('item_id')} references unknown damage {it['damage_id']}")
+            if it.get("flag_id") is not None and it["flag_id"] not in flag_ids:
+                raise ModelError(f"scope item {it.get('item_id')} references unknown flag {it['flag_id']}")
 
     def to_dict(self) -> dict:
         self.validate()
@@ -337,7 +402,8 @@ class Property:
             "walls": [w.to_dict() for w in self.walls],
             "openings": [o.to_dict() for o in self.openings],
             "unverified_openings": [o.to_dict() for o in self.unverified_openings],
-            "damage": [d.to_dict() for d in self.damage],
+            "damage_regions": [d.to_dict() for d in self.damage],
+            "damage": [d.to_dict() for d in self.damage],  # deprecated alias of damage_regions (kept for older consumers)
             "concealed_damage_flags": list(self.concealed_damage_flags),
             "scope_line_items": list(self.scope_line_items),
             "warnings": list(self.warnings),

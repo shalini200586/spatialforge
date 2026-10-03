@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import math
 
-from spatialforge.pipeline.models import OPENING_TYPES, QUALITIES, SCHEMA_VERSION, STATUSES
+from spatialforge.pipeline.models import DAMAGE_CLASSES, OPENING_TYPES, QUALITIES, SCHEMA_VERSION, STATUSES, SURFACE_TYPES
 
 NUM = {"type": "number"}
 NUM_OR_NULL = {"type": ["number", "null"]}
@@ -65,6 +65,31 @@ def build_schema() -> dict:
         "Footprint": _obj({"polygon": {"type": "array", "items": _ref("Point"), "minItems": 3},
                            "area": _ref("Measurement"), "kind": STR, "complete": {"type": "boolean"}, "note": STR}),
     }
+    defs["Source"] = _obj({"image_id": STR, "tier": STR, "frame_index": {"type": ["integer", "null"]},
+                           "image_size": {"type": "array", "items": NUM, "minItems": 2}})
+    defs["DamageRegion"] = _obj({
+        "damage_id": STR, "class": {"type": "string", "enum": list(DAMAGE_CLASSES)},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1}, "quality": QUALITY, "source": _ref("Source"),
+        "image_region": _obj({"bbox": {"type": "array", "items": NUM, "minItems": 4},
+                              "polygon": {"type": "array", "items": {"type": "array", "items": NUM, "minItems": 2}},
+                              "area_px": NUM}),
+        "room_id": {"type": ["string", "null"]}, "surface_id": {"type": ["string", "null"]},
+        "surface_type": {"type": ["string", "null"], "enum": list(SURFACE_TYPES) + [None]},
+        "width_m": {"anyOf": [_ref("Measurement"), {"type": "null"}]}, "height_m": {"anyOf": [_ref("Measurement"), {"type": "null"}]},
+        "area_m2": {"anyOf": [_ref("Measurement"), {"type": "null"}]}, "length_m": {"anyOf": [_ref("Measurement"), {"type": "null"}]},
+        "surface_extent": {"anyOf": [_obj({"u_min": NUM, "u_max": NUM, "v_min": NUM, "v_max": NUM}), {"type": "null"}]},
+        "metric_reliable": {"type": "boolean"}, "other_sources": {"type": "array", "items": _ref("Source")}, "warnings": STRS,
+    })
+    defs["ConcealedFlag"] = _obj({
+        "flag_id": STR, "rule_id": STR, "rule_name": STR, "risk": STR, "explanation": STR, "damage_ids": STRS,
+        "surface_id": {"type": ["string", "null"]}, "room_id": {"type": ["string", "null"]}, "quality": QUALITY,
+        "claims_presence": {"const": False}, "note": STR,
+    })
+    defs["ScopeItem"] = _obj({
+        "item_id": STR, "surface_id": {"type": ["string", "null"]}, "damage_id": {"type": ["string", "null"]},
+        "flag_id": {"type": ["string", "null"]}, "room_id": {"type": ["string", "null"]}, "action": STR,
+        "quantity": {"anyOf": [_ref("Measurement"), {"type": "null"}]}, "quality": QUALITY, "basis": STR,
+    })
     top = _obj({
         "schema_version": {"const": SCHEMA_VERSION},
         "capture": {"type": "object", "required": ["tier", "source"]},
@@ -78,7 +103,10 @@ def build_schema() -> dict:
         "walls": {"type": "array", "items": _ref("Wall")},
         "openings": {"type": "array", "items": _ref("Opening")},
         "unverified_openings": {"type": "array", "items": _ref("Opening")},
-        "damage": {"type": "array"}, "concealed_damage_flags": {"type": "array"}, "scope_line_items": {"type": "array"},
+        "damage_regions": {"type": "array", "items": _ref("DamageRegion")},
+        "damage": {"type": "array", "items": _ref("DamageRegion")},  # deprecated alias of damage_regions
+        "concealed_damage_flags": {"type": "array", "items": _ref("ConcealedFlag")},
+        "scope_line_items": {"type": "array", "items": _ref("ScopeItem")},
         "warnings": STRS, "provenance": {"type": "object"}, "timing": {"type": "object"},
     })
     return {"$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "spatialforge/property.schema.json",

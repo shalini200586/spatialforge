@@ -8,6 +8,7 @@ implemented.
 
     pip install -e .[test]            # LiDAR tier
     pip install -e .[test,video]      # plus the video tier (see "Video tier" below)
+    pip install -e .[damage]          # OpenCV only: the damage analysis for any tier (included in [video])
 
 ## Usage
 
@@ -38,8 +39,8 @@ room topology, unverified opening recall, no ground truth); nothing missing is f
 `schema_version "1.0"`, then `capture` (tier, source, device), `property` (status, footprint if available),
 `rooms` (polygon, area, perimeter, length x width where meaningful, wall ids, ceiling height where observed,
 adjacent and connected room ids, topology quality), `walls`, `openings` (type, width, height/sill where observed,
-room connectivity, existence/type quality), `unverified_openings`, empty `damage`, `concealed_damage_flags` and
-`scope_line_items`, `warnings`, `provenance` (stages, pose source, depth scale, assumptions) and `timing`.
+room connectivity, existence/type quality), `unverified_openings`, `damage_regions`, `concealed_damage_flags` and
+`scope_line_items` (see "Damage analysis"; empty when the analysis is off or finds nothing), `warnings`, `provenance` (stages, pose source, depth scale, assumptions) and `timing`.
 
 Every measurement is `{value, unit, interval {low, high} | null, confidence | null, quality | null, source_tier}`.
 The interval is the stage's own uncertainty range, never invented. `confidence` is a heuristic score (not a
@@ -194,6 +195,54 @@ stitching_final.png}`.
 - A doorway-only stitch is a weak guess and is only made when unambiguous; a false stitch is possible.
 - Few photos mean walls and rooms often do not close; results are usually partial.
 - Reconstruction is slow-ish on CPU: a few minutes for a handful of rooms.
+
+## Damage analysis (all tiers)
+
+`process` also looks for visible damage in the RGB evidence of the tier and maps it onto the property. It runs by default; add
+`--no-damage` to skip it (`pip install -e .[damage]`: OpenCV only, no model weights, CPU).
+
+    python -m spatialforge process CAPTURE --tier lidar --output RESULT [--no-damage]
+
+**Evidence:** LiDAR - up to 24 frames of `rgb.mp4` with the *production* poses (original or drift-corrected) and the capture's RGB
+intrinsics; video - up to 40 SfM keyframes with their metric poses; photos - each placed room's photos, with the room-local poses
+composed with the room's placement. An image without a pose is still analysed, but its detections are not mapped.
+
+**Classes and method** (deterministic, no training, no learned model):
+- `crack` - thin dark ridges: black-hat morphology, robust MAD threshold, elongated/thin component filters; perfectly straight
+  long lines (door frames, joints) are rejected.
+- `stain` - colour that deviates from the local wall colour (chroma against a median-filtered Lab background); pure shadows
+  (brightness only) are rejected; blobs must be large, compact and smooth.
+- Labels are normalised (`Hairline-Crack` -> `crack`, `mould`/`water stain` -> `stain`); unknown classes are refused.
+- `confidence` is a heuristic score, not a probability. There is no ground truth, so precision and recall are unmeasured.
+
+**Mapping and metric extent:** rays through the detection outline are cast onto the property's wall, floor and ceiling planes;
+the nearest valid surface wins, and a doorway is not a wall. A detection gets `surface_id`, `room_id` and a metric
+`width_m` / `height_m` / `area_m2` / `length_m` (wall: along the wall and vertical; floor/ceiling: principal axes) **only if** at
+least 80% of its outline agrees on one surface, the surface is not seen at a grazing angle, the range is 0.3-10 m and the wall itself
+is not weak. Otherwise the detection is kept with null extents and a warning. Each extent is a `Measurement` whose interval
+combines the surface's own scale uncertainty (video/photos carry theirs), the plane-position uncertainty over the range, and a 2 px
+boundary error. Views of the same damage on the same surface are merged into one region (`other_sources` lists the rest).
+
+**Concealed damage is rule-based only** and never claimed to exist. Every flag names its rule and the condition that fired and
+lists the visible detections that triggered it: `CDR-001` stain with its lowest edge within 0.30 m of the floor; `CDR-002` stain
+within 0.30 m of the ceiling, or on a ceiling; `CDR-003` two or more stains within 1.5 m on one wall; `CDR-004` crack within
+0.30 m of an opening's head corner; `CDR-005` crack of 1.0 m or longer; `CDR-006` crack and stain within 0.30 m. Rules need a
+metric position, so they are not evaluated for detections without one (listed in `damage_report.json`).
+
+**Scope line items** are keyed to surfaces: a crack -> `seal_and_repair_crack` (quantity = length, m); a stain ->
+`treat_stain_and_repaint` (quantity = area, m2); a concealed flag -> an inspection item (quantity 1). No metric extent means no
+quantity (null, weak quality), never an invented one.
+
+**Output:** `property.json` gains `damage_regions` (the old `damage` key is an identical deprecated alias), `concealed_damage_flags`
+and `scope_line_items`, all typed in `schema/property.schema.json`. Diagnostics in `diagnostics\damage\`: `damage_report.json`
+(every region, flag, item, per-image counts, rule evaluations), `damage_plan.png` (markers on the plan) and `images\*.jpg` (evidence
+images with outlines and labels).
+
+**Limitations:** deterministic image processing is crude. Furniture, art, plants or cables can look like stains or cracks, and
+damage on an object in front of a wall is projected onto the wall (objects are not modelled); a very straight hairline crack is
+rejected as an edge; shadows with a colour cast can pass as stains; low-texture or blurred frames reduce recall. Metric extents
+inherit the geometry's accuracy (video and photo scale is only ~10-15% reliable). LiDAR frame selection uses video seeking, which can
+be a few frames off. Treat every detection as a candidate for human review.
 
 ## Development: individual stage commands
 

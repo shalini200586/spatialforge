@@ -268,6 +268,19 @@ def run_photo_stages(capture: str | Path, opts: PhotoOptions) -> StageOutputs:
             stages=stages, device={"model": None}, frames={"folders": len(results), "images": len(records)},
             decisions=decisions, prebuilt_property=prop, parameters={"stitch": stitch.__dict__},
             debug={"run_report_extra": extra})
+        from spatialforge.damage.evidence import photo_evidence_fn
+
+        def photo_rgb(name):
+            loader = getattr(backend, "load_rgb", None)
+            if loader is not None:
+                return loader(name)
+            import cv2
+
+            return cv2.cvtColor(cv2.imread(records[name].work_path), cv2.COLOR_BGR2RGB)
+
+        placed = [{"room_id": rid, "pose": main.poses[rid], "floor_y": by_id[rid].floor_y_m, "poses": by_id[rid].poses,
+                   "cameras": by_id[rid].cameras} for rid in placed_ids if by_id[rid].floor_y_m is not None]
+        out.evidence_fn = photo_evidence_fn(placed, photo_rgb)
         return out
     finally:
         shutil.rmtree(workspace, ignore_errors=True)
@@ -451,7 +464,7 @@ def _build_property(capture, val, backend, depth_backend, results, by_id, main, 
     warnings.append("Opening recall has not been verified: openings in walls that were not detected, or in unclosed regions, are not reported.")
     warnings.append("No physical ground truth was supplied: dimensions are not benchmarked, and intervals are diagnostic uncertainty "
                     "ranges, not calibrated confidence intervals.")
-    warnings.append("Damage detection is not part of this version: damage, concealed_damage_flags and scope_line_items are empty.")
+    warnings.append("Damage detection is not part of this version: damage, concealed_damage_flags and scope_line_items are empty.")  # replaced when the damage analysis runs
 
     # --- status: complete only if the evidence supports a coherent property ---
     all_placed = len(placed_ids) == len(results)

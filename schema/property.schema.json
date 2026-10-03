@@ -34,6 +34,264 @@
       ],
       "type": "object"
     },
+    "ConcealedFlag": {
+      "additionalProperties": false,
+      "properties": {
+        "claims_presence": {
+          "const": false
+        },
+        "damage_ids": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "explanation": {
+          "type": "string"
+        },
+        "flag_id": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "quality": {
+          "enum": [
+            "strong",
+            "moderate",
+            "weak"
+          ],
+          "type": "string"
+        },
+        "risk": {
+          "type": "string"
+        },
+        "room_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rule_id": {
+          "type": "string"
+        },
+        "rule_name": {
+          "type": "string"
+        },
+        "surface_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "claims_presence",
+        "damage_ids",
+        "explanation",
+        "flag_id",
+        "note",
+        "quality",
+        "risk",
+        "room_id",
+        "rule_id",
+        "rule_name",
+        "surface_id"
+      ],
+      "type": "object"
+    },
+    "DamageRegion": {
+      "additionalProperties": false,
+      "properties": {
+        "area_m2": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "class": {
+          "enum": [
+            "crack",
+            "stain"
+          ],
+          "type": "string"
+        },
+        "confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        "damage_id": {
+          "type": "string"
+        },
+        "height_m": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "image_region": {
+          "additionalProperties": false,
+          "properties": {
+            "area_px": {
+              "type": "number"
+            },
+            "bbox": {
+              "items": {
+                "type": "number"
+              },
+              "minItems": 4,
+              "type": "array"
+            },
+            "polygon": {
+              "items": {
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "type": "array"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "area_px",
+            "bbox",
+            "polygon"
+          ],
+          "type": "object"
+        },
+        "length_m": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "metric_reliable": {
+          "type": "boolean"
+        },
+        "other_sources": {
+          "items": {
+            "$ref": "#/$defs/Source"
+          },
+          "type": "array"
+        },
+        "quality": {
+          "enum": [
+            "strong",
+            "moderate",
+            "weak"
+          ],
+          "type": "string"
+        },
+        "room_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "$ref": "#/$defs/Source"
+        },
+        "surface_extent": {
+          "anyOf": [
+            {
+              "additionalProperties": false,
+              "properties": {
+                "u_max": {
+                  "type": "number"
+                },
+                "u_min": {
+                  "type": "number"
+                },
+                "v_max": {
+                  "type": "number"
+                },
+                "v_min": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "u_max",
+                "u_min",
+                "v_max",
+                "v_min"
+              ],
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "surface_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "surface_type": {
+          "enum": [
+            "wall",
+            "floor",
+            "ceiling",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "warnings": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "width_m": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "area_m2",
+        "class",
+        "confidence",
+        "damage_id",
+        "height_m",
+        "image_region",
+        "length_m",
+        "metric_reliable",
+        "other_sources",
+        "quality",
+        "room_id",
+        "source",
+        "surface_extent",
+        "surface_id",
+        "surface_type",
+        "warnings",
+        "width_m"
+      ],
+      "type": "object"
+    },
     "Footprint": {
       "additionalProperties": false,
       "properties": {
@@ -374,6 +632,74 @@
       ],
       "type": "object"
     },
+    "ScopeItem": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "type": "string"
+        },
+        "basis": {
+          "type": "string"
+        },
+        "damage_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "flag_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "item_id": {
+          "type": "string"
+        },
+        "quality": {
+          "enum": [
+            "strong",
+            "moderate",
+            "weak"
+          ],
+          "type": "string"
+        },
+        "quantity": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "room_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "surface_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "action",
+        "basis",
+        "damage_id",
+        "flag_id",
+        "item_id",
+        "quality",
+        "quantity",
+        "room_id",
+        "surface_id"
+      ],
+      "type": "object"
+    },
     "Segment": {
       "additionalProperties": false,
       "properties": {
@@ -391,6 +717,37 @@
         "end",
         "length",
         "start"
+      ],
+      "type": "object"
+    },
+    "Source": {
+      "additionalProperties": false,
+      "properties": {
+        "frame_index": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "image_id": {
+          "type": "string"
+        },
+        "image_size": {
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "type": "array"
+        },
+        "tier": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "frame_index",
+        "image_id",
+        "image_size",
+        "tier"
       ],
       "type": "object"
     },
@@ -474,9 +831,21 @@
       "type": "object"
     },
     "concealed_damage_flags": {
+      "items": {
+        "$ref": "#/$defs/ConcealedFlag"
+      },
       "type": "array"
     },
     "damage": {
+      "items": {
+        "$ref": "#/$defs/DamageRegion"
+      },
+      "type": "array"
+    },
+    "damage_regions": {
+      "items": {
+        "$ref": "#/$defs/DamageRegion"
+      },
       "type": "array"
     },
     "openings": {
@@ -540,6 +909,9 @@
       "const": "1.0"
     },
     "scope_line_items": {
+      "items": {
+        "$ref": "#/$defs/ScopeItem"
+      },
       "type": "array"
     },
     "timing": {
@@ -568,6 +940,7 @@
     "capture",
     "concealed_damage_flags",
     "damage",
+    "damage_regions",
     "openings",
     "property",
     "provenance",
