@@ -31,6 +31,28 @@ MARGIN = 90
 TOP = 110
 FOOTER = 90
 MAX_SIDE_PX = 1500
+MIN_WIDTH = 1300  # the header note and footer are one line each; narrow plans get white space instead of cut-off text
+FOOTERS = {
+    "lidar": "Metric LiDAR measurements; uncertainty intervals and quality ratings are in property.json.",
+    "video": "Scaled monocular-video measurements: metric scale is estimated, uncertainty is wider than LiDAR. "
+             "Intervals and quality ratings are in property.json.",
+    "other": "Uncertainty intervals and quality ratings are in property.json.",
+}
+
+
+def _wrap(d, text: str, font, max_w: float) -> list[str]:
+    """Greedy word wrap to a pixel width; text that already fits stays one line."""
+    if not text:
+        return [""]
+    lines, cur = [], ""
+    for word in text.split(" "):
+        trial = f"{cur} {word}" if cur else word
+        if cur and d.textlength(trial, font=font) > max_w:
+            lines.append(cur)
+            cur = word
+        else:
+            cur = trial
+    return lines + [cur]
 
 
 def _font(size: int):
@@ -136,7 +158,7 @@ def render_plan(prop: Property, path: Path, title: str = "") -> PlanInfo:
     xs, zs = [p[0] for p in pts], [p[1] for p in pts]
     x0, x1, z0, z1 = min(xs) - 0.8, max(xs) + 0.8, min(zs) - 0.8, max(zs) + 0.8
     ppm = float(np.clip(MAX_SIDE_PX / max(x1 - x0, z1 - z0), 25.0, 120.0))
-    w, h = int((x1 - x0) * ppm) + 2 * MARGIN, int((z1 - z0) * ppm) + TOP + FOOTER
+    w, h = max(int((x1 - x0) * ppm) + 2 * MARGIN, MIN_WIDTH), int((z1 - z0) * ppm) + TOP + FOOTER
     img = Image.new("RGB", (w, h), BACKGROUND)
     d = ImageDraw.Draw(img)
     info = PlanInfo(path, w, h, ppm, x0, z1)
@@ -250,14 +272,16 @@ def render_plan(prop: Property, path: Path, title: str = "") -> PlanInfo:
     note = ("Rooms shown are only those whose walls form closed outlines. " +
             (f"{len(loose)} wall(s) outside any recovered room are dashed grey. " if loose else "") +
             "Unverified gaps are dotted. Not a complete property plan.") if prop.status != "complete" else ""
-    d.text((MARGIN, 88), note, font=f_small, fill=PARTIAL)
+    for i, line in enumerate(_wrap(d, note, f_small, w - MARGIN - 20)):
+        d.text((MARGIN, 88 + 16 * i), line, font=f_small, fill=PARTIAL)
     bar_m = 1.0 if (x1 - x0) < 8 else 2.0
     bx, by = MARGIN, h - 55
     d.line([(bx, by), (bx + bar_m * ppm, by)], fill=TEXT, width=4)
     d.text((bx + bar_m * ppm + 10, by - 9), f"{bar_m:g} m", font=f_small, fill=TEXT)
     d.text((bx + bar_m * ppm + 70, by - 9), "+X →   +Z ↑   (capture frame, metres)", font=f_small, fill=MUTED)
-    d.text((MARGIN, h - 32), "Metric LiDAR measurements; uncertainty intervals and quality ratings are in property.json.",
-           font=f_small, fill=MUTED)
+    footer = FOOTERS.get(prop.capture.get("tier"), FOOTERS["other"])
+    for i, line in enumerate(_wrap(d, footer, f_small, w - MARGIN - 20)):
+        d.text((MARGIN, h - 32 + 16 * i), line, font=f_small, fill=MUTED)
 
     path.parent.mkdir(parents=True, exist_ok=True)
     img.save(path)

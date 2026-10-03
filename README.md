@@ -1,11 +1,12 @@
 # SpatialForge
 
 Turns a capture of a property into a dimensioned floor plan and a machine-readable description. The LiDAR tier
-(depth + camera poses) is implemented; video and photo tiers are not yet.
+(depth + camera poses) and the video tier (a normal walkthrough video) are implemented; the photo tier is not yet.
 
 ## Install
 
-    pip install -e .[test]
+    pip install -e .[test]            # LiDAR tier
+    pip install -e .[test,video]      # plus the video tier (see "Video tier" below)
 
 ## Usage
 
@@ -21,6 +22,11 @@ ceiling planes, structural walls, room topology, openings) and writes:
 
 Exit code: 0 = success or partial result, 1 = failure (invalid capture, no metric reconstruction), 2 = bad usage.
 Options: `--max-frames 400` and `--frame-step 1` (evenly spaced, deterministic frame selection).
+
+For a walkthrough video the same command takes the video file and the video tier (needs `pip install -e .[video]`
+and the one-off model download, see below):
+
+    python -m spatialforge process "C:\capture\walkthrough.mp4" --tier video --output "C:\result"
 
 **Results are partial by design.** Only spaces whose walls form closed outlines become rooms, and only openings
 verified in 3D are reported. `property.status` says `partial` and `warnings` lists what is missing (incomplete
@@ -48,6 +54,79 @@ Rooms (id, area, length x width or "irregular", ceiling height), structural wall
 openings with their widths, on a metric-scaled white background. Policies: weak walls are not drawn; walls outside
 any recovered room are dashed grey; unverified wall gaps are dotted; low-confidence openings are left out of the
 plan and listed under `unverified_openings`; a PARTIAL badge and note are always shown for partial results.
+
+## Video tier (tier 2)
+
+    python -m spatialforge process "C:\capture\walkthrough.mp4" --tier video --output "C:\result"
+
+Produces the same artifacts and the same canonical `property.json` schema as LiDAR (`source_tier` is `video`), plus
+video diagnostics in `RESULT\diagnostics\`: `keyframes\`, `trajectory.png`, `trajectory.json`, `sparse_sfm.ply`,
+`metric_cloud.ply`, `scale_report.json`, `video_frontend.json`.
+
+**A monocular video has no depth, no known poses and no absolute scale.** Structure-from-Motion alone is scale
+ambiguous, so the pipeline needs two things and never claims metres from SfM by itself:
+
+    video -> validation -> deterministic keyframes -> PyCOLMAP sparse SfM (trajectory + sparse points, ARBITRARY scale)
+          -> metric monocular depth on keyframes -> robust metric scale (depth vs SfM, many frames)
+          -> scaled trajectory -> depth back-projected and fused -> gravity from geometry
+          -> MetricScene -> the SAME floor / wall / room / opening stages as LiDAR -> canonical Property
+
+### Prerequisites and model setup
+
+    pip install -e .[video]              # opencv-python-headless, pycolmap, torch (CPU), transformers
+    python scripts/download_models.py    # ~100 MB, cached OUTSIDE the repository
+
+The weights (Depth Anything V2 Metric-Indoor-Small, ~25M parameters, about 99 MB) are cached in
+`%SPATIALFORGE_MODELS%` or `~/.spatialforge/models` and are never committed. Behind a TLS-inspecting proxy install
+`truststore` (the script uses the operating system's certificate store; verification stays on). CPU only, no CUDA, no
+compilation (`pycolmap` and `torch` are prebuilt wheels). If the weights are missing the run does not fake anything: it
+returns a partial result with `metric_scale_available: false` and a warning.
+
+### How the stages work
+
+- **Validation:** file exists, supported container, decodable, size, fps, duration (at least 5 s), seekable.
+- **Keyframes (deterministic, no randomness):** candidates at a fixed rate from one decode pass; blurred candidates
+  (Laplacian variance below half the local median) and whip-pans are dropped; a keyframe needs parallax (median
+  optical flow) since the last one, a minimum gap, and is forced after a maximum gap. Thinned to 120 by dropping the one
+  whose removal leaves the smallest gap. The container's rotation metadata is applied.
+- **SfM:** PyCOLMAP SIFT features (4096 per image), sequential matching with quadratic overlap, incremental mapping,
+  one shared SIMPLE_RADIAL camera with the focal length estimated (no metadata prior is used). The largest model is kept.
+  Tracking quality: STRONG (>= 80% registered, >= 1500 points, <= 1 px), MODERATE (>= 50%), WEAK (>= 15%), FAILURE
+  (below that, or fewer than 10 images): FAILURE stops the run (exit code 1); WEAK continues but the result is partial.
+- **Metric scale:** per depth keyframe the metric depth is sampled at the SfM points' pixels (edges and extreme ratios
+  rejected); `metric depth / SfM depth` gives per-frame scales (log-domain median with outlier rejection); the global scale
+  is the median across frames. Reported: frames used, correspondences, spread, standard error, combined sigma.
+  `scale_quality` is never `strong` for an uncalibrated monocular model; if frames disagree too much no scale is
+  returned and **no geometry is reported**.
+- **Per-frame depth alignment:** single-frame metric depth varies by tens of percent between frames, so each frame's depth
+  is rescaled to the SfM geometry at the global metric scale before fusion. The only absolute quantity taken from the depth
+  model is the global scale.
+- **Gravity:** estimated from geometry, not assumed. Candidate axes are scored by height-slab concentration (floors,
+  ceilings) within a cone around the camera path's least-variance axis, refined so wall normals are perpendicular to up. The
+  sign comes from the floor below the cameras at a plausible distance, a strong image-up agreement, or weak cues, in that
+  order, and the confidence says which.
+- **Fusion:** depth is back-projected through the scaled poses (radial distortion undone), a point must be confirmed by a
+  second keyframe (10 cm voxel), then voxel-downsampled (3 cm). Deterministic stride throughout.
+- **Uncertainty:** every length gets a relative sigma from scale (spread/sqrt(frames) plus a 10% floor for the
+  unvalidated model), SfM quality (reprojection error, unregistered keyframes) and depth inconsistency, combined in
+  quadrature; stage intervals are widened by +-2 sigma in quadrature (areas by twice that), and measurement quality is
+  capped by the scale quality. These are engineering estimates, not calibrated intervals.
+
+### Known limitations
+
+- **Scale depends on a monocular depth model.** Measured against ARKit poses on the sample captures, the depth-derived
+  scale was off by +12% to +16% (oracle poses) and by -12% and +5% in two real-SfM runs. Intervals are therefore much
+  wider than LiDAR's. COLMAP itself is multi-threaded and not bit-reproducible: two runs on the same video registered 25
+  and 33 keyframes.
+- **Performance depends on texture, blur, lighting and parallax.** The three sample videos are LiDAR scanning passes (fast
+  sweeps, white walls, close range): SfM fragments into several disconnected models on them. They are not walkthroughs and
+  say little about the real tier-2 benchmark video.
+- Only the largest connected SfM model is used, so a fragmented trajectory covers only part of the property.
+- 64 depth keyframes (default) limit coverage of long videos; denser fusion costs about 3 s per frame on CPU.
+- Fused monocular clouds are far noisier than LiDAR (decimetres vs centimetres), so the LiDAR-tuned structural stages
+  recover fewer walls and rooms; results are usually partial.
+- Gravity sign relies on weak cues when neither floor nor image-up is decisive; the confidence reports it.
+- Typical runtime on a 14-thread CPU: 6-10 minutes for a 1-3 minute video.
 
 ## Development: individual stage commands
 

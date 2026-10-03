@@ -125,7 +125,7 @@ def test_cli_exit_codes(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(lidar_pipeline, "run_lidar_stages", fail)
     assert main(["process", "C:/data/bad", "--tier", "lidar", "--output", str(tmp_path / "bad")]) == 1
     assert "ERROR [capture_validation]" in capsys.readouterr().out
-    assert main(["process", "C:/data/cap", "--tier", "video", "--output", str(tmp_path / "v")]) == 2
+    assert main(["process", "C:/data/cap", "--tier", "photos", "--output", str(tmp_path / "v")]) == 2
     assert "not implemented" in capsys.readouterr().err
 
 

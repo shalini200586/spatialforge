@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+import numpy as np
+
 from spatialforge import __version__
 from spatialforge.pipeline.models import (
     UNMODELLED, Ceiling, Footprint, Measurement, ModelError, Opening, Point2D, Property, Room, Segment, Wall,
@@ -45,37 +47,66 @@ class StageOutputs:
     stages: list[StageRecord]
     parameters: dict = field(default_factory=dict)
     debug: dict = field(default_factory=dict)  # heavy objects for diagnostics only
+    # --- tier-neutral extras (defaults reproduce the LiDAR behaviour exactly) ---
+    tier: str = "lidar"
+    uncertainty: "MeasureContext | None" = None  # widening of lengths/areas (video); None = stages' own intervals only
+    provenance_extra: dict | None = None  # when set, replaces the LiDAR provenance block (video supplies its own)
+    decisions: list | None = None  # fallback / policy decisions for the run report; None = the LiDAR pose-refinement one
+    capture_extra: dict | None = None  # extra keys for property.capture (e.g. video facts)
+    status_blockers: list = field(default_factory=list)  # reasons a tier caps the property at "partial"
 
 
-def _m(value, unit, interval=None, confidence=None, quality=None) -> Measurement:
-    low = high = None
-    if interval is not None:
-        low, high = min(interval[0], value), max(interval[1], value)  # an interval always contains its own value
-    return Measurement(float(value), unit, low, high, confidence, quality, "lidar")
+_QUALITY_RANK = {"weak": 0, "moderate": 1, "strong": 2}
+
+
+@dataclass
+class MeasureContext:
+    """Builds Measurements for one tier. For video it widens every length/area by the propagated relative uncertainty."""
+
+    tier: str = "lidar"
+    rel_sigma: float = 0.0  # relative 1-sigma of lengths (metric scale, SfM pose, depth consistency combined in quadrature)
+    k: float = 2.0  # half-width = k * sigma (about 95% for a normal error; a diagnostic range, not a calibrated interval)
+    quality_cap: str | None = None  # measurement quality can never be better than this (e.g. weak metric scale)
+    components: dict = field(default_factory=dict)
+
+    def measure(self, value, unit, interval=None, confidence=None, quality=None) -> Measurement:
+        low = high = None
+        if interval is not None:
+            low, high = min(interval[0], value), max(interval[1], value)  # an interval always contains its own value
+        if self.rel_sigma > 0 and unit in ("m", "m2") and value:
+            rel = self.rel_sigma * (2.0 if unit == "m2" else 1.0)  # area error is twice the length error to first order
+            extra = self.k * rel * abs(float(value))
+            lo0, hi0 = (value, value) if low is None else (low, high)
+            low = float(value) - float(np.hypot(float(value) - lo0, extra))
+            high = float(value) + float(np.hypot(hi0 - float(value), extra))
+        if quality is not None and self.quality_cap in _QUALITY_RANK and quality in _QUALITY_RANK:
+            quality = min(quality, self.quality_cap, key=_QUALITY_RANK.get)
+        return Measurement(float(value), unit, low, high, confidence, quality, self.tier)
 
 
 def _pt(p) -> Point2D:
     return Point2D(float(p[0]), float(p[1]))
 
 
-def _walls(out: StageOutputs) -> list[Wall]:
+def _walls(out: StageOutputs, ctx: MeasureContext) -> list[Wall]:
     walls = []
     for d in out.wall_dicts:
         q = d["evidence"]
         o, ou = d["orientation_deg"], d["orientation_uncertainty_deg"]
         walls.append(Wall(
             id=d["id"], start=_pt(d["start"]), end=_pt(d["end"]),
-            length=_m(d["length_m"], "m", quality=q), observed_length=_m(d["observed_length_m"], "m", quality=q),
-            orientation=_m(o, "deg", (o - ou, o + ou), quality=q), evidence_quality=q,
-            position_uncertainty=_m(d["position_uncertainty_m"], "m"),
-            segments=[Segment(_pt(s["start"]), _pt(s["end"]), _m(s["length_m"], "m", quality=q)) for s in d["segments"]],
+            length=ctx.measure(d["length_m"], "m", quality=q), observed_length=ctx.measure(d["observed_length_m"], "m", quality=q),
+            orientation=ctx.measure(o, "deg", (o - ou, o + ou), quality=q), evidence_quality=q,
+            position_uncertainty=ctx.measure(d["position_uncertainty_m"], "m"),
+            segments=[Segment(_pt(s["start"]), _pt(s["end"]), ctx.measure(s["length_m"], "m", quality=q)) for s in d["segments"]],
         ))
     return walls
 
 
 def assemble_property(out: StageOutputs) -> Property:
     warnings: list[str] = [f"capture: {w}" for w in out.validation_warnings] + list(out.stage_warnings)
-    walls = _walls(out)
+    ctx = out.uncertainty or MeasureContext(out.tier)
+    walls = _walls(out, ctx)
     topo, opening_result = out.topology, out.openings
     conf_by_height = {round(l["height_m"], 3): l.get("confidence") for l in out.ceiling_levels}
 
@@ -83,7 +114,7 @@ def assemble_property(out: StageOutputs) -> Property:
     if topo is not None:
         for r in topo.rooms:
             try:
-                rooms.append(_room(r, conf_by_height, opening_result))
+                rooms.append(_room(r, conf_by_height, opening_result, ctx))
             except ModelError as exc:
                 warnings.append(f"{r.id} was dropped from the output: {exc}")
     room_ids = {r.id for r in rooms}
@@ -96,9 +127,9 @@ def assemble_property(out: StageOutputs) -> Property:
         for i, o in enumerate(opening_result.accepted, 1):
             id_map[o.id] = f"opening_{i:03d}"
         for o in opening_result.accepted:
-            openings.append(_opening(o, id_map[o.id], room_ids))
+            openings.append(_opening(o, id_map[o.id], room_ids, ctx))
         for i, o in enumerate(opening_result.low_confidence, 1):
-            unverified.append(_opening(o, f"unverified_{i:03d}", room_ids))
+            unverified.append(_opening(o, f"unverified_{i:03d}", room_ids, ctx))
     for room in rooms:
         conn = opening_result.connectivity.get(room.id, {}) if opening_result is not None else {}
         room.connected_room_ids = [x for x in conn.get("connected_room_ids", []) if x in room_ids]
@@ -132,16 +163,17 @@ def assemble_property(out: StageOutputs) -> Property:
     warnings.append("Damage detection is not part of this version: damage, concealed_damage_flags and "
                     "scope_line_items are empty.")
     failed = [s.name for s in out.stages if s.status == "failed"]
-    status = "complete" if (rooms and not loose and not failed) else "partial"
+    status = "complete" if (rooms and not loose and not failed and not out.status_blockers) else "partial"
     if failed:
         warnings.append("Stage(s) failed and were skipped: " + ", ".join(failed))
+    warnings += [b for b in out.status_blockers if b not in warnings]
 
     footprint = None
     if topo is not None and topo.outer_boundary is not None:
         ob = topo.outer_boundary
         try:
             footprint = Footprint(
-                [Point2D(p["x"], p["z"]) for p in ob["polygon"]], _m(ob["area_m2"], "m2", quality="weak"),
+                [Point2D(p["x"], p["z"]) for p in ob["polygon"]], ctx.measure(ob["area_m2"], "m2", quality="weak"),
                 "wall_graph_outer_boundary", False,
                 "Outer face of the connected wall graph: an envelope of the recovered walls, NOT a verified property "
                 "footprint.")
@@ -149,10 +181,11 @@ def assemble_property(out: StageOutputs) -> Property:
             footprint = None
 
     prop = Property(
-        capture={"tier": "lidar", "source": {"name": out.capture_name, "path": out.capture_path}, "device": out.device},
+        capture={"tier": out.tier, "source": {"name": out.capture_name, "path": out.capture_path}, "device": out.device,
+                 **(out.capture_extra or {})},
         status=status, rooms=rooms, walls=walls, openings=openings, unverified_openings=unverified, footprint=footprint,
         warnings=warnings,
-        provenance=_provenance(out),
+        provenance=out.provenance_extra if out.provenance_extra is not None else _provenance(out),
         timing={"stages": {s.name: round(s.seconds, 3) for s in out.stages},
                 "stages_total_s": round(sum(s.seconds for s in out.stages), 3)},
     )
@@ -160,41 +193,41 @@ def assemble_property(out: StageOutputs) -> Property:
     return prop
 
 
-def _room(r, conf_by_height: dict, opening_result) -> Room:
+def _room(r, conf_by_height: dict, opening_result, ctx: MeasureContext) -> Room:
     quality = r.topology_quality
-    lens = [_m(v, "m", iv, quality=quality) for v, iv in zip(r.wall_lengths_m, r.wall_length_intervals_m)]
+    lens = [ctx.measure(v, "m", iv, quality=quality) for v, iv in zip(r.wall_lengths_m, r.wall_length_intervals_m)]
     per_lo = sum(min(a, v) for (a, _), v in zip(r.wall_length_intervals_m, r.wall_lengths_m))
     per_hi = sum(max(b, v) for (_, b), v in zip(r.wall_length_intervals_m, r.wall_lengths_m))
     c = r.ceiling
     if c.get("ceiling_observed"):
         h = c["ceiling_height_m"]
-        ceiling = Ceiling(True, _m(h, "m", c.get("ceiling_height_interval_m"), conf_by_height.get(round(h, 3))),
+        ceiling = Ceiling(True, ctx.measure(h, "m", c.get("ceiling_height_interval_m"), conf_by_height.get(round(h, 3))),
                           False, c.get("coverage"))
     else:
         ceiling = Ceiling(False, None, bool(c.get("ambiguous")), None)
     return Room(
         id=r.id, polygon=[_pt(p) for p in r.polygon],
-        area=_m(r.area_m2, "m2", r.area_interval_m2, quality=quality),
-        perimeter=_m(r.perimeter_m, "m", (per_lo, per_hi), quality=quality),  # sum of per-edge extremes: conservative
+        area=ctx.measure(r.area_m2, "m2", r.area_interval_m2, quality=quality),
+        perimeter=ctx.measure(r.perimeter_m, "m", (per_lo, per_hi), quality=quality),  # sum of per-edge extremes: conservative
         wall_ids=list(r.wall_ids), wall_lengths=lens, ceiling=ceiling, topology_quality=quality,
-        length=None if r.length_m is None else _m(r.length_m, "m", r.length_interval_m, quality=quality),
-        width=None if r.width_m is None else _m(r.width_m, "m", r.width_interval_m, quality=quality),
+        length=None if r.length_m is None else ctx.measure(r.length_m, "m", r.length_interval_m, quality=quality),
+        width=None if r.width_m is None else ctx.measure(r.width_m, "m", r.width_interval_m, quality=quality),
         dimension_method=r.dimension_method, adjacent_room_ids=[a["room_id"] for a in r.adjacent],
     )
 
 
-def _opening(o, new_id: str, room_ids: set) -> Opening:
+def _opening(o, new_id: str, room_ids: set, ctx: MeasureContext) -> Opening:
     lj, rj = o.left_jamb, o.right_jamb
     rooms = [r for r in o.room_ids if r in room_ids]
     connects = [c for c in o.connects if c == UNMODELLED or c in room_ids]
     return Opening(
         id=new_id, wall_id=o.candidate.wall_id, type=o.type,
-        width=_m(o.width_m, "m", o.width_interval_m, quality=o.width_quality),
+        width=ctx.measure(o.width_m, "m", o.width_interval_m, quality=o.width_quality),
         position=Point2D((lj["x"] + rj["x"]) / 2, (lj["z"] + rj["z"]) / 2),
         left_jamb=Point2D(lj["x"], lj["z"]), right_jamb=Point2D(rj["x"], rj["z"]),
         existence_quality=o.existence_quality, type_quality=o.type_quality, observability=o.observability,
-        height=None if o.height_m is None else _m(o.height_m, "m"),
-        sill_height=None if o.sill_height_m is None else _m(o.sill_height_m, "m"),
+        height=None if o.height_m is None else ctx.measure(o.height_m, "m"),
+        sill_height=None if o.sill_height_m is None else ctx.measure(o.sill_height_m, "m"),
         room_ids=rooms, connects=connects,
         connected_room_ids=rooms if len(rooms) == 2 and o.status == "accepted" else [],
     )

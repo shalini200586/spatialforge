@@ -317,6 +317,10 @@ def format_process_summary(result) -> str:
                      f"openings {c['openings']} (+{c['unverified_openings']} unverified), ceiling levels {c['ceiling_levels']}, "
                      f"rooms with a ceiling height {c['rooms_with_ceiling']}")
         lines.append(f"Production poses: {rep['production_pose_source']}")
+    if "metric_scale_available" in rep:
+        ms = rep.get("video", {}).get("metric_scale", {})
+        lines.append(f"Tracking: {rep.get('tracking_quality', '?')}   metric scale available: {rep['metric_scale_available']}"
+                     + (f" ({ms.get('scale_quality')}, {ms.get('metres_per_sfm_unit')} m per SfM unit)" if ms.get("scale_quality") else ""))
     if rep.get("warnings"):
         lines.append(f"Warnings ({len(rep['warnings'])}):")
         lines += [f"  - {w}" for w in rep["warnings"]]
@@ -429,11 +433,13 @@ def main(argv: list[str] | None = None) -> int:
         "process",
         help="end-to-end: capture -> property.json + plan.png + run_report.json (+ diagnostics/)",
     )
-    pr.add_argument("capture", help="path to the capture folder")
-    pr.add_argument("--tier", required=True, choices=["lidar", "video", "photos"], help="input tier (only lidar exists so far)")
+    pr.add_argument("capture", help="capture folder (lidar) or video file (video)")
+    pr.add_argument("--tier", required=True, choices=["lidar", "video", "photos"], help="input tier (lidar and video exist so far)")
     pr.add_argument("--output", required=True, help="result folder")
-    pr.add_argument("--max-frames", type=int, default=400, help="cap on frames used, evenly spaced (default 400)")
-    pr.add_argument("--frame-step", type=int, default=1, help="use every Nth frame (default 1)")
+    pr.add_argument("--max-frames", type=int, default=400, help="lidar: cap on frames used, evenly spaced (default 400)")
+    pr.add_argument("--frame-step", type=int, default=1, help="lidar: use every Nth frame (default 1)")
+    pr.add_argument("--max-keyframes", type=int, default=120, help="video: upper bound on SfM keyframes (default 120)")
+    pr.add_argument("--max-depth-frames", type=int, default=64, help="video: keyframes that get a metric depth map (default 64)")
     args = parser.parse_args(argv)
 
     if args.command == "validate-lidar":
@@ -442,13 +448,21 @@ def main(argv: list[str] | None = None) -> int:
         return 1 if result.status is Status.INVALID else 0
 
     if args.command == "process":
-        if args.tier != "lidar":
+        if args.tier == "photos":
             print(f"error: the {args.tier} tier is not implemented yet", file=sys.stderr)
             return 2
         from spatialforge.pipeline.lidar_pipeline import PipelineOptions, process_capture
 
-        result = process_capture(args.capture, args.output,
-                                 PipelineOptions(frame_step=args.frame_step, max_frames=args.max_frames), tier=args.tier)
+        if args.tier == "video":
+            from spatialforge.video.pipeline import VideoOptions, run_video_stages
+
+            vopts = VideoOptions()
+            vopts.keyframes.target_max = args.max_keyframes
+            vopts.max_depth_frames = args.max_depth_frames
+            result = process_capture(args.capture, args.output, vopts, stages_fn=run_video_stages, tier="video")
+        else:
+            result = process_capture(args.capture, args.output,
+                                     PipelineOptions(frame_step=args.frame_step, max_frames=args.max_frames), tier=args.tier)
         print(format_process_summary(result))
         return result.exit_code
 

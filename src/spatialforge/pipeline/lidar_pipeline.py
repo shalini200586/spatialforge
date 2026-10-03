@@ -18,16 +18,10 @@ import numpy as np
 from spatialforge.pipeline.lidar_adapter import StageOutputs, StageRecord, assemble_property
 from spatialforge.pipeline.models import ModelError
 from spatialforge.pipeline.render import render_plan
+from spatialforge.pipeline.scene import MetricScene
 from spatialforge.pipeline.serialization import property_to_dict, write_json
-
-
-class PipelineFailure(Exception):
-    """The run cannot produce a property (invalid capture, no metric reconstruction)."""
-
-    def __init__(self, stage: str, message: str):
-        super().__init__(f"{stage}: {message}")
-        self.stage = stage
-        self.message = message
+from spatialforge.pipeline.stages import PipelineFailure, StageTimer
+from spatialforge.pipeline.structure import run_structure_stages
 
 
 @dataclass
@@ -51,22 +45,7 @@ class PipelineResult:
 # ---------- the heavy stages ----------
 
 
-class _Timer:
-    def __init__(self, out_stages: list[StageRecord], name: str):
-        self.rec = StageRecord(name, "ok")
-        out_stages.append(self.rec)
-
-    def __enter__(self):
-        self.t0 = time.perf_counter()
-        return self.rec
-
-    def __exit__(self, exc_type, exc, tb):
-        self.rec.seconds = time.perf_counter() - self.t0
-        if exc is not None:
-            self.rec.status, self.rec.error = "failed", f"{type(exc).__name__}: {exc}"
-        elif self.rec.warnings and self.rec.status == "ok":
-            self.rec.status = "warning"
-        return False  # never swallow here; callers decide whether a failure is fatal
+_Timer = StageTimer  # historical name
 
 
 def run_lidar_stages(capture: str | Path, opts: PipelineOptions) -> StageOutputs:
@@ -75,14 +54,10 @@ def run_lidar_stages(capture: str | Path, opts: PipelineOptions) -> StageOutputs
     from spatialforge.lidar.drift import AcceptanceRules, DriftOptions
     from spatialforge.lidar.drift_run import compute_drift_ablation
     from spatialforge.lidar.geometry import DEPTH_SCALE_M_PER_UNIT
-    from spatialforge.lidar.openings import OpeningOptions, detect_openings
+    from spatialforge.lidar.openings import OpeningOptions
     from spatialforge.lidar.openings_run import frame_subset_clouds
-    from spatialforge.lidar.planes import analyze_horizontal_planes
     from spatialforge.lidar.reconstruction import ReconstructionError, ReconstructionOptions
-    from spatialforge.lidar.rooms import WallInput, build_topology
-    from spatialforge.lidar.rooms_run import ceiling_levels_from_planes
     from spatialforge.lidar.validator import resolve_capture_root, validate_lidar_capture
-    from spatialforge.lidar.walls import extract_walls
 
     capture = Path(capture)
     stages: list[StageRecord] = []
@@ -142,77 +117,15 @@ def run_lidar_stages(capture: str | Path, opts: PipelineOptions) -> StageOutputs
         debug={"cloud": cloud},
     )
 
-    # 3. floor + ceilings
-    planes = None
-    try:
-        with _Timer(stages, "floor_and_ceiling_planes") as rec:
-            planes = analyze_horizontal_planes(cloud, cameras)
-            if not planes.floor.observed:
-                rec.warnings.append(f"Floor plane not found ({planes.floor.reject_reason}); walls, rooms and openings "
-                                    "cannot be derived.")
-            rec.warnings += [w for w in planes.warnings]
-    except Exception:
-        pass  # recorded by the timer; the pipeline continues without planes
-    if planes is not None and planes.floor.observed:
-        out.floor_y_m = float(planes.floor.height_m)
-        out.ceiling_levels = [{"height_m": float(h["value_m"]), "interval_m": [float(x) for x in h["confidence_interval_m"]],
-                               "confidence": float(h["confidence"])}
-                              for h in planes.ceiling_level_heights]
-    stage_warnings += stages[-1].warnings
-    if stages[-1].status == "failed":
-        stage_warnings.append(f"Floor/ceiling stage failed: {stages[-1].error}")
-
-    wall_inputs, wall_analysis, topo = [], None, None
-    if out.floor_y_m is None:
-        for name in ("structural_walls", "room_topology", "openings"):
-            stages.append(StageRecord(name, "skipped", warnings=["skipped: no floor plane"]))
-        return out
-
-    # 4. walls
-    try:
-        with _Timer(stages, "structural_walls") as rec:
-            wall_analysis = extract_walls(cloud, planes.floor.fit, [lvl.fit for lvl in planes.ceiling_levels])
-            rec.warnings += list(wall_analysis.warnings)
-            rec.details = {"walls": len(wall_analysis.walls), "rejected_candidates": len(wall_analysis.rejected)}
-        out.wall_dicts = wall_analysis.to_dict()["walls"]
-        wall_inputs = [WallInput.from_dict(w) for w in out.wall_dicts]
-        out.debug["wall_analysis"] = wall_analysis
-    except Exception:
-        stage_warnings.append(f"Wall stage failed: {stages[-1].error}")
-    stage_warnings += [w for w in stages[-1].warnings]
-
-    # 5. rooms
-    if wall_inputs:
-        try:
-            with _Timer(stages, "room_topology") as rec:
-                topo = build_topology(wall_inputs, None, ceiling_levels_from_planes(planes))
-                rec.warnings += list(topo.warnings)
-                rec.details = {"rooms": len(topo.rooms), "candidate_faces": topo.candidate_faces,
-                               "rejected_faces": len(topo.rejected_faces)}
-            out.topology = topo
-        except Exception:
-            stage_warnings.append(f"Room stage failed: {stages[-1].error}")
-    else:
-        stages.append(StageRecord("room_topology", "skipped", warnings=["skipped: no walls"]))
-
-    # 6. openings
-    if wall_inputs:
-        try:
-            with _Timer(stages, "openings") as rec:
-                oopts = OpeningOptions()
-                lowest = min((float(h["value_m"]) for h in planes.ceiling_level_heights), default=None)
-                subsets = frame_subset_clouds(comp, oopts)
-                res = detect_openings(cloud, planes.floor.fit, wall_inputs, topo, subsets, oopts, lowest)
-                rec.warnings += list(res.warnings)
-                rec.details = {"candidates": len(res.candidates), "accepted": len(res.accepted),
-                               "low_confidence": len(res.low_confidence), "rejected": len(res.rejected),
-                               "frame_subsets": len(subsets)}
-            out.openings = res
-        except Exception:
-            stage_warnings.append(f"Opening stage failed: {stages[-1].error}")
-    else:
-        stages.append(StageRecord("openings", "skipped", warnings=["skipped: no walls"]))
-    out.debug["wall_inputs"] = wall_inputs
+    # 3-6. floor/ceiling, walls, rooms, openings: the shared structural backend, fed by a MetricScene
+    oopts = OpeningOptions()
+    scene = MetricScene(
+        cloud, "lidar", geometry_quality="strong", scale_quality="sensor",
+        camera_poses=np.asarray(comp.production_poses), frame_refs=[str(f) for f in comp.frames],
+        subsets_fn=lambda: frame_subset_clouds(comp, oopts),
+        metadata={"pose_source": comp.pose_source},
+    )
+    run_structure_stages(scene, out)
     out.parameters["depth_scale_m_per_unit"] = DEPTH_SCALE_M_PER_UNIT
     return out
 
@@ -285,10 +198,11 @@ def process_capture(capture: str | Path, output: str | Path, options: PipelineOp
             report["stages"] = [{"name": s.name, "status": s.status, "seconds": round(s.seconds, 3),
                                  "warnings": s.warnings, "error": s.error, "details": s.details} for s in so.stages]
             report["production_pose_source"] = so.pose_source
-            report["fallback_decisions"] = [{
+            report["fallback_decisions"] = so.decisions if so.decisions is not None else [{
                 "stage": "pose_refinement",
                 "decision": "kept the supplied (original) poses" if not so.drift.get("correction_accepted") else "used corrected poses",
                 "reason": so.drift.get("fallback_reason") or "metrics supported the correction"}]
+            report.update(so.debug.get("run_report_extra", {}))
         if prop_dict is not None:
             report["counts"] = _counts(prop_dict, so)
             report["warnings"] = prop_dict["warnings"]
@@ -296,10 +210,16 @@ def process_capture(capture: str | Path, output: str | Path, options: PipelineOp
         write_json(out_dir / "run_report.json", report)
         return PipelineResult(status, code, out_dir, prop_dict, report, files or {})
 
+    if hasattr(options, "output_dir"):
+        options.output_dir = out_dir  # a tier that writes its own diagnostics needs to know where
     try:
         so = stages_fn(capture, options)
     except PipelineFailure as exc:
         report["errors"].append({"stage": exc.stage, "message": exc.message})
+        if exc.stages:
+            report["stages"] = [{"name": s.name, "status": s.status, "seconds": round(s.seconds, 3),
+                                 "warnings": s.warnings, "error": s.error, "details": s.details} for s in exc.stages]
+        report.update(exc.extra)
         return finish("failure", 1)
     except Exception as exc:  # unexpected: still a clean failure with the reason recorded
         report["errors"].append({"stage": "pipeline", "message": f"{type(exc).__name__}: {exc}",

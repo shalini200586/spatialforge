@@ -14,6 +14,13 @@ requires-python = ">=3.11"
 dependencies = ["numpy", "Pillow", "open3d>=0.18"]
 
 [project.optional-dependencies]
+# Tier 2 (video). All CPU-only, all prebuilt wheels; nothing is compiled. Model weights are NOT installed by pip:
+# run `python scripts/download_models.py` (cache is outside the repository).
+#   opencv-python-headless: video decoding, optical flow, sharpness
+#   pycolmap:               sparse Structure-from-Motion (feature extraction, sequential matching, incremental mapping)
+#   torch + transformers:   Depth Anything V2 Metric-Indoor-Small (metric monocular depth)
+#   truststore (optional):  use the OS certificate store when downloading weights behind a TLS-inspecting proxy
+video = ["opencv-python-headless>=4.8", "pycolmap>=4.0", "torch>=2.2", "transformers>=4.45", "huggingface_hub"]
 test = ["pytest"]
 
 [project.scripts]
