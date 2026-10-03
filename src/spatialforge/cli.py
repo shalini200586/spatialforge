@@ -317,7 +317,12 @@ def format_process_summary(result) -> str:
                      f"openings {c['openings']} (+{c['unverified_openings']} unverified), ceiling levels {c['ceiling_levels']}, "
                      f"rooms with a ceiling height {c['rooms_with_ceiling']}")
         lines.append(f"Production poses: {rep['production_pose_source']}")
-    if "metric_scale_available" in rep:
+    if "placed_rooms" in rep.get("photos", {}):
+        ph = rep["photos"]
+        lines.append(f"Photo folders: {ph['folders']}   placed: {', '.join(ph['placed_rooms']) or 'none'}   "
+                     f"not placed: {', '.join(u['canonical_id'] for u in ph['unplaced_rooms']) or 'none'}   "
+                     f"stitch constraints: {len(ph['constraints'])}")
+    elif "metric_scale_available" in rep and "photos" not in rep:
         ms = rep.get("video", {}).get("metric_scale", {})
         lines.append(f"Tracking: {rep.get('tracking_quality', '?')}   metric scale available: {rep['metric_scale_available']}"
                      + (f" ({ms.get('scale_quality')}, {ms.get('metres_per_sfm_unit')} m per SfM unit)" if ms.get("scale_quality") else ""))
@@ -433,8 +438,8 @@ def main(argv: list[str] | None = None) -> int:
         "process",
         help="end-to-end: capture -> property.json + plan.png + run_report.json (+ diagnostics/)",
     )
-    pr.add_argument("capture", help="capture folder (lidar) or video file (video)")
-    pr.add_argument("--tier", required=True, choices=["lidar", "video", "photos"], help="input tier (lidar and video exist so far)")
+    pr.add_argument("capture", help="capture folder (lidar), video file (video) or directory of room photo folders (photos)")
+    pr.add_argument("--tier", required=True, choices=["lidar", "video", "photos"], help="input tier")
     pr.add_argument("--output", required=True, help="result folder")
     pr.add_argument("--max-frames", type=int, default=400, help="lidar: cap on frames used, evenly spaced (default 400)")
     pr.add_argument("--frame-step", type=int, default=1, help="lidar: use every Nth frame (default 1)")
@@ -448,12 +453,13 @@ def main(argv: list[str] | None = None) -> int:
         return 1 if result.status is Status.INVALID else 0
 
     if args.command == "process":
-        if args.tier == "photos":
-            print(f"error: the {args.tier} tier is not implemented yet", file=sys.stderr)
-            return 2
         from spatialforge.pipeline.lidar_pipeline import PipelineOptions, process_capture
 
-        if args.tier == "video":
+        if args.tier == "photos":
+            from spatialforge.photos.pipeline import PhotoOptions, run_photo_stages
+
+            result = process_capture(args.capture, args.output, PhotoOptions(), stages_fn=run_photo_stages, tier="photos")
+        elif args.tier == "video":
             from spatialforge.video.pipeline import VideoOptions, run_video_stages
 
             vopts = VideoOptions()

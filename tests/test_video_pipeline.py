@@ -260,4 +260,4 @@ def test_cli_video_tier(video, tmp_path, monkeypatch, capsys):
     assert (tmp_path / "ok" / "property.json").exists()
     assert main(["process", str(tmp_path / "nope.mp4"), "--tier", "video", "--output", str(tmp_path / "bad")]) == 1
     assert "ERROR [video_validation]" in capsys.readouterr().out
-    assert main(["process", "x", "--tier", "photos", "--output", str(tmp_path / "p")]) == 2
+    assert main(["process", str(tmp_path / "no_photos"), "--tier", "photos", "--output", str(tmp_path / "p")]) == 1  # photos exist now

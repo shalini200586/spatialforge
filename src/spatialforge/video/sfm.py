@@ -42,6 +42,7 @@ class SfmOptions:
     min_points_moderate: int = 400
     min_points_weak: int = 100
     min_registered_images: int = 10
+    image_noun: str = "keyframes"  # wording only: photos say "photos"
 
 
 @dataclass
@@ -95,6 +96,7 @@ class SfmRun:
     # image name -> (pixel xy (N,2), world xyz in SfM units (N,3)) of the triangulated points it observes
     observations: dict[str, tuple[np.ndarray, np.ndarray]] = field(default_factory=dict)
     points_xyz: np.ndarray = field(default_factory=lambda: np.zeros((0, 3)))  # all sparse points (SfM units)
+    cameras: dict[str, SfmCameraInfo] = field(default_factory=dict)  # image name -> its camera (photos: one per room)
     reconstruction: object | None = None  # pycolmap.Reconstruction (heavy; kept only for debugging)
 
 
@@ -122,7 +124,7 @@ def quat_xyzw_to_rotation(q) -> np.ndarray:
 def classify_tracking(registered: int, attempted: int, points: int, reproj: float | None, opts: SfmOptions) -> tuple[str, list[str]]:
     """STRONG / MODERATE / WEAK / FAILURE from registration ratio, sparse points and reprojection error."""
     ratio = registered / attempted if attempted else 0.0
-    reasons = [f"{registered}/{attempted} keyframes registered ({ratio:.0%})", f"{points} sparse points"]
+    reasons = [f"{registered}/{attempted} {opts.image_noun} registered ({ratio:.0%})", f"{points} sparse points"]
     if reproj is not None:
         reasons.append(f"mean reprojection error {reproj:.2f} px")
     if registered < opts.min_registered_images or points < opts.min_points_weak or ratio < opts.weak_registered_ratio:
@@ -192,25 +194,33 @@ def run_sfm(image_dir: Path, work_dir: Path, opts: SfmOptions | None = None, log
     except Exception:
         pass
 
+    return models_to_run(recs, names, opts, sec, verified)
+
+
+def models_to_run(recs: dict, names: list[str], opts: SfmOptions, sec: dict, verified: int | None,
+                  focal_source: str = "estimated by COLMAP (no focal-length metadata prior used)") -> SfmRun:
+    """Turn COLMAP's reconstructions (dict id -> Reconstruction) into an SfmRun: the largest model, its poses, the
+    triangulated observations per image and its quality. `names` are the images that were offered to the mapper."""
     sizes = sorted((r.num_reg_images() for r in recs.values()), reverse=True)
     if not recs:
-        res = SfmResult(len(names), 0, 0.0, 0, None, None, 0, [], None, names, "failure",
+        res = SfmResult(len(names), 0, 0.0, 0, None, None, 0, [], None, list(names), "failure",
                         ["no reconstruction was produced"], sec, verified)
         return SfmRun(res, {})
     # largest model; ties broken by point count then model id, so the choice is deterministic
     best_id = max(recs, key=lambda k: (recs[k].num_reg_images(), recs[k].num_points3D(), -k))
     rec = recs[best_id]
     poses: dict[str, SfmImagePose] = {}
+    cams: dict[str, SfmCameraInfo] = {}
     for im in rec.images.values():
         if not im.has_pose:
             continue
         cfw = im.cam_from_world()
         poses[im.name] = SfmImagePose(im.name, int(im.image_id), quat_xyzw_to_rotation(cfw.rotation.quat),
                                       np.asarray(cfw.translation, dtype=np.float64), int(im.num_points3D))
-    cam = next(iter(rec.cameras.values()))
-    focal = float(cam.params[0]) if len(cam.params) else float("nan")
-    cam_info = SfmCameraInfo(str(cam.model).split(".")[-1], int(cam.width), int(cam.height), [float(p) for p in cam.params],
-                             focal, "estimated by COLMAP (no focal-length metadata prior used)")
+        c = rec.cameras[im.camera_id]
+        cams[im.name] = SfmCameraInfo(str(c.model).split(".")[-1], int(c.width), int(c.height), [float(x) for x in c.params],
+                                      float(c.params[0]) if len(c.params) else float("nan"), focal_source)
+    cam_info = next(iter(cams.values())) if cams else None
     try:
         reproj = float(rec.compute_mean_reprojection_error())
         track = float(rec.compute_mean_track_length())
@@ -231,4 +241,4 @@ def run_sfm(image_dir: Path, work_dir: Path, opts: SfmOptions | None = None, log
                     xyz.append(rec.points3D[p.point3D_id].xyz)
             obs[im.name] = (np.asarray(xy, dtype=np.float64).reshape(-1, 2), np.asarray(xyz, dtype=np.float64).reshape(-1, 3))
     pts = np.array([p.xyz for p in rec.points3D.values()], dtype=np.float64).reshape(-1, 3)
-    return SfmRun(res, poses, obs, pts, rec)
+    return SfmRun(res, poses, obs, pts, cams, rec)

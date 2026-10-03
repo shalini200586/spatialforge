@@ -227,7 +227,7 @@ def process_capture(capture: str | Path, output: str | Path, options: PipelineOp
         return finish("failure", 1)
 
     try:
-        prop = assemble_property(so)
+        prop = so.prebuilt_property if so.prebuilt_property is not None else assemble_property(so)
         t_render = time.perf_counter()
         render_info = render_plan(prop, out_dir / "plan.png", f"SpatialForge floor plan — {so.capture_name}")
         prop.timing["render_plan_s"] = round(time.perf_counter() - t_render, 3)

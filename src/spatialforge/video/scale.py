@@ -28,6 +28,7 @@ class ScaleOptions:
     min_inlier_floor: float = 0.02  # lower bound on the robust spread used for inlier rejection (log domain)
     min_correspondences: int = 15  # per frame
     min_frames: int = 5
+    min_frames_for_moderate: int = 1  # photos: a scale seen by fewer frames than this is at best WEAK
     min_total_correspondences: int = 200
     # Systematic error of an uncalibrated monocular metric-depth model: sigma never goes below this. Measured against
     # ARKit poses on the sample captures, the depth-derived scale was off by +13.9% (oracle poses) and -12.1% (real SfM).
@@ -155,7 +156,8 @@ def estimate_metric_scale(frames: list[FrameScale], opts: ScaleOptions | None = 
                              standard_error_rel=None, sigma_rel=None, reasons=reasons, **base)
     ls = np.log([f.scale for f in good])
     g = float(np.exp(np.median(ls)))
-    spread = mad_sigma(ls)
+    # a MAD over 2-4 values is meaningless: use the plain sample standard deviation there
+    spread = mad_sigma(ls) if len(ls) >= 5 else float(np.std(ls, ddof=1))
     se = spread / np.sqrt(len(good))
     sigma = float(np.hypot(se, opts.model_floor_rel))
     reasons.append(f"median of {len(good)} per-frame scales over {total} correspondences")
@@ -172,6 +174,9 @@ def estimate_metric_scale(frames: list[FrameScale], opts: ScaleOptions | None = 
     else:
         quality = "weak"
         reasons.append("scale varies a lot between keyframes: metric scale is weak")
+    if quality == "moderate" and len(good) < opts.min_frames_for_moderate:
+        quality = "weak"
+        reasons.append(f"only {len(good)} images support the scale (moderate needs {opts.min_frames_for_moderate})")
     return ScaleEstimate(True, quality, g, len(good), correspondences=total, frame_spread_rel=float(spread),
                          standard_error_rel=float(se), sigma_rel=sigma, reasons=reasons,
                          min_frame_scale=float(np.exp(ls.min())), max_frame_scale=float(np.exp(ls.max())), **base)

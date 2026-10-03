@@ -36,6 +36,8 @@ FOOTERS = {
     "lidar": "Metric LiDAR measurements; uncertainty intervals and quality ratings are in property.json.",
     "video": "Scaled monocular-video measurements: metric scale is estimated, uncertainty is wider than LiDAR. "
              "Intervals and quality ratings are in property.json.",
+    "photos": "Metric scale is estimated from monocular photos (per room) and rooms are stitched from image evidence: uncertainty is "
+              "wider than video or LiDAR. Intervals and quality ratings are in property.json.",
     "other": "Uncertainty intervals and quality ratings are in property.json.",
 }
 
@@ -149,7 +151,8 @@ def render_plan(prop: Property, path: Path, title: str = "") -> PlanInfo:
         d = ImageDraw.Draw(img)
         d.text((40, 40), title or "SpatialForge floor plan", font=f_title, fill=TEXT)
         d.text((40, 90), "NO STRUCTURE RECOVERED", font=f_title, fill=PARTIAL)
-        for i, w in enumerate(prop.warnings[:4]):
+        shown = [w for w in prop.warnings if not w.startswith("input:")]  # input-metadata notes are not why nothing was drawn
+        for i, w in enumerate(shown[:5]):
             d.text((40, 150 + 30 * i), w[:110], font=f_small, fill=MUTED)
         path.parent.mkdir(parents=True, exist_ok=True)
         img.save(path)
@@ -272,6 +275,12 @@ def render_plan(prop: Property, path: Path, title: str = "") -> PlanInfo:
     note = ("Rooms shown are only those whose walls form closed outlines. " +
             (f"{len(loose)} wall(s) outside any recovered room are dashed grey. " if loose else "") +
             "Unverified gaps are dotted. Not a complete property plan.") if prop.status != "complete" else ""
+    if prop.capture.get("tier") == "photos" and prop.status != "complete":
+        unplaced = [u["canonical_id"] for u in prop.provenance.get("photos", {}).get("unplaced_rooms", [])]
+        note = ("Rooms are placed only where photo evidence connects them. " +
+                (f"NOT PLACED (not drawn): {', '.join(unplaced)}. " if unplaced else "") +
+                (f"{len(loose)} wall(s) outside any recovered room are dashed grey. " if loose else "") +
+                "Not a complete property plan.")
     for i, line in enumerate(_wrap(d, note, f_small, w - MARGIN - 20)):
         d.text((MARGIN, 88 + 16 * i), line, font=f_small, fill=PARTIAL)
     bar_m = 1.0 if (x1 - x0) < 8 else 2.0

@@ -54,6 +54,7 @@ class StageOutputs:
     decisions: list | None = None  # fallback / policy decisions for the run report; None = the LiDAR pose-refinement one
     capture_extra: dict | None = None  # extra keys for property.capture (e.g. video facts)
     status_blockers: list = field(default_factory=list)  # reasons a tier caps the property at "partial"
+    prebuilt_property: object | None = None  # a tier that assembles its own canonical Property (photos) supplies it here
 
 
 _QUALITY_RANK = {"weak": 0, "moderate": 1, "strong": 2}

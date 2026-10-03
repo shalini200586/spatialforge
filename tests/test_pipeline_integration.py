@@ -125,8 +125,9 @@ def test_cli_exit_codes(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(lidar_pipeline, "run_lidar_stages", fail)
     assert main(["process", "C:/data/bad", "--tier", "lidar", "--output", str(tmp_path / "bad")]) == 1
     assert "ERROR [capture_validation]" in capsys.readouterr().out
-    assert main(["process", "C:/data/cap", "--tier", "photos", "--output", str(tmp_path / "v")]) == 2
-    assert "not implemented" in capsys.readouterr().err
+    # the photos tier validates its input first: a missing photo directory is a clean failure, not "not implemented"
+    assert main(["process", str(tmp_path / "no_such_photos"), "--tier", "photos", "--output", str(tmp_path / "v")]) == 1
+    assert "ERROR [photo_validation]" in capsys.readouterr().out
 
 
 def test_repeated_run_gives_the_same_json_and_plan(tmp_path):

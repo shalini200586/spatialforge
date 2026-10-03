@@ -1,7 +1,8 @@
 # SpatialForge
 
 Turns a capture of a property into a dimensioned floor plan and a machine-readable description. The LiDAR tier
-(depth + camera poses) and the video tier (a normal walkthrough video) are implemented; the photo tier is not yet.
+(depth + camera poses), the video tier (a normal walkthrough video) and the photo tier (room folders of still photos) are
+implemented.
 
 ## Install
 
@@ -127,6 +128,72 @@ returns a partial result with `metric_scale_available: false` and a warning.
   recover fewer walls and rooms; results are usually partial.
 - Gravity sign relies on weak cues when neither floor nor image-up is decisive; the confidence reports it.
 - Typical runtime on a 14-thread CPU: 6-10 minutes for a 1-3 minute video.
+
+## Photo tier (tier 1)
+
+    python -m spatialforge process property_photos --tier photos --output result
+
+**Input:** a directory of room folders, 2-8 photos each (`.jpg`, `.jpeg`, `.png`; HEIC is rejected with a clear message,
+convert it to JPEG first). No poses, no depth, no trajectory are needed.
+
+    property_photos\
+        room_01\   IMG_001.JPG  IMG_002.JPG  IMG_003.JPG
+        room_02\   IMG_101.JPG  IMG_102.JPG  IMG_103.JPG
+        hallway\   IMG_201.JPG  IMG_202.JPG
+
+The output is ONE property (same `property.json` schema, `plan.png`, `run_report.json`, `diagnostics\`; `source_tier` is
+`photos`), not separate room plans. Folder names are kept as `source_label` only; canonical ids are `room_001`, `room_002`
+... in sorted folder order and no room type is ever inferred from a name.
+
+**Capture advice** (it decides whether rooms can be stitched):
+- take overlapping views and include every corner, so each wall is seen whole;
+- photograph each doorway from BOTH sides: shared doorway views are the strongest stitch evidence;
+- keep the original files and their EXIF (focal length is used as an SfM prior only when every photo carries a believable
+  35 mm equivalent; orientation is applied in memory, originals are never modified).
+
+**How it works** (`python -m spatialforge process ...` runs all of it):
+1. *Validation:* every folder has 2-8 supported photos that decode and have sensible size; nothing is skipped silently.
+2. *One COLMAP database for the whole property:* features once, **exhaustive matching** of all images (cheap: few photos).
+3. *Per room:* PyCOLMAP SfM restricted to that room's photos (STRONG / MODERATE / WEAK / FAILURE; two registered photos are
+   never STRONG), cached metric monocular depth (the video tier's model), the room's **own** metric scale (never borrowed from
+   another room), gravity from geometry, then the shared floor / wall / room / opening stages. A failed SfM or missing scale
+   gives an unreconstructed / unscaled room with **no geometry**: no typical room size, door width or ceiling height is used.
+4. *Cross-room evidence:* for every room pair, geometrically VERIFIED feature matches between their photos (raw matches never
+   count). A pair becomes a stitch candidate only with a verified image pair of at least 25 inliers at inlier ratio 0.25 and 50
+   verified matches in total (`StitchOptions`).
+5. *Relative transform:* the photos of both rooms are mapped together (a joint SfM model); aligning each room's metric local
+   poses to the joint poses gives rotation and translation (yaw and x/z, both rooms being gravity-aligned). Tilt, scale
+   disagreement and fit residual set the constraint's uncertainty and can reject it.
+6. *Doorways:* an opening in room A and one in room B that coincide after the transform (width, parallel walls) confirm the
+   stitch (`visual+doorway`). With no image evidence, a doorway-only constraint is created only if exactly one physically
+   consistent placement exists (weak quality, flagged); ambiguous doorway matches are refused.
+7. *Placement:* deterministic robust (Huber) least squares over the room graph, anchored at the strongest room of each
+   component; loop-inconsistent edges are rejected, never averaged in; placed rooms must not overlap (alternative doorway
+   hypothesis first, otherwise the weakest edge on the path is rejected). Only the largest component is placed.
+8. *Property:* walls shared by two rooms and the same doorway seen from both are merged; adjacency is reported as
+   `verified_connection` (same doorway), `geometric_adjacency`, or `probable_adjacency_*` (placed together by evidence only,
+   lower quality); the footprint is the union of the PLACED rooms only (`complete: false`).
+
+**Not placed:** a room that cannot be connected to the main component is not drawn beside the property. It is listed under
+`provenance.photos.unplaced_rooms`, in `warnings`, and in the plan's header note; the property is then `partial`.
+
+**Uncertainty:** per room from the scale spread (small-sample SD for 2-4 photos, a 10% floor for the unvalidated depth model),
+SfM reprojection/registration, single-view depth (no multi-view cross-check with so few photos) and gravity quality, in
+quadrature; then widened by cross-room scale inconsistency (`scale_inconsistent`, never forced equal), loop residual and overlap
+conflicts. Stitch translation uncertainty widens the walls' position uncertainty and the footprint area. Heuristics, not
+calibrated intervals.
+
+**Diagnostics:** `diagnostics\photo_frontend.json`, `rooms\room_00N\{reconstruction.json, sparse_sfm.ply, metric_cloud.ply,
+local_plan.png}`, `stitching\{room_graph.json, stitch_constraints.json, overlap_report.json, stitching_initial.png,
+stitching_final.png}`.
+
+**Known limitations**
+- Monocular scale: each room's scale comes from a depth model and is typically off by 10-15%; rooms are not forced to agree.
+- Sparse or textureless rooms, and rooms photographed without overlap or without corners, give weak or failed SfM.
+- Poor cross-room evidence (no shared view, no doorway photographed from both sides) leaves rooms unplaced.
+- A doorway-only stitch is a weak guess and is only made when unambiguous; a false stitch is possible.
+- Few photos mean walls and rooms often do not close; results are usually partial.
+- Reconstruction is slow-ish on CPU: a few minutes for a handful of rooms.
 
 ## Development: individual stage commands
 

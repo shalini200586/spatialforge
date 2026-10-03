@@ -174,9 +174,22 @@ def estimate_gravity(points: np.ndarray, camera_positions: np.ndarray, camera_up
         planarity = float(w[0] / w[1]) if w[1] > 1e-12 else 0.0
         if planarity <= opts.planar_ratio:
             prior = v[:, 0]
+    hint_axis = None
+    if prior is None and len(cams) < 6 and camera_up_hints is not None and len(camera_up_hints):
+        # Too few cameras for a path prior (still photos). Upright photos give consistent image-up directions; use their
+        # mean only to restrict the search to a cone. The geometry still decides the axis inside it.
+        h = np.asarray(camera_up_hints, dtype=np.float64)
+        h = h / np.maximum(np.linalg.norm(h, axis=1, keepdims=True), 1e-12)
+        mean = h.mean(axis=0)
+        if np.linalg.norm(mean) >= 0.85:
+            hint_axis = mean / np.linalg.norm(mean)
     if prior is not None:
         dirs = _cone_directions(prior, opts.cone_deg, opts.cone_step_deg)
         method = "height-slab concentration within a cone around the least-variance axis of the camera path"
+    elif hint_axis is not None:
+        dirs = _cone_directions(hint_axis, opts.cone_deg, opts.cone_step_deg)
+        method = "height-slab concentration within a cone around the mean image-up direction (too few cameras for a path prior)"
+        notes.append("few cameras: the search was restricted to a cone around the images' up direction")
     else:
         dirs = _fibonacci_hemisphere(opts.sphere_directions)
         method = "height-slab concentration over the whole sphere (camera path is not planar: lower confidence)"
