@@ -1,0 +1,2997 @@
+{
+  "capture": {
+    "device": {
+      "camera_matrix": {
+        "cx": 955.8228,
+        "cy": 717.7025,
+        "fx": 1601.0514,
+        "fy": 1601.0514
+      },
+      "depth_dtype": "uint16",
+      "depth_resolution": "256x192 (width x height)",
+      "imu_samples": 21339,
+      "model": null,
+      "rgb_resolution": "1920x1440"
+    },
+    "source": {
+      "name": "single_scan_with_ceiling",
+      "path": "C:\\captures\\single_scan_with_ceiling"
+    },
+    "tier": "lidar"
+  },
+  "concealed_damage_flags": [],
+  "damage_regions": [
+    {
+      "area_m2": null,
+      "class": "stain",
+      "confidence": 0.563,
+      "damage_id": "damage_001",
+      "height_m": null,
+      "image_region": {
+        "area_px": 9275.0,
+        "bbox": [
+          1145.0,
+          33.8,
+          1278.8,
+          141.2
+        ],
+        "polygon": [
+          [
+            1153.8,
+            55.0
+          ],
+          [
+            1145.0,
+            91.2
+          ],
+          [
+            1168.8,
+            97.5
+          ],
+          [
+            1170.0,
+            136.2
+          ],
+          [
+            1180.0,
+            137.5
+          ],
+          [
+            1200.0,
+            126.2
+          ],
+          [
+            1211.2,
+            141.2
+          ],
+          [
+            1223.8,
+            140.0
+          ],
+          [
+            1221.2,
+            131.2
+          ],
+          [
+            1230.0,
+            121.2
+          ],
+          [
+            1262.5,
+            128.8
+          ],
+          [
+            1268.8,
+            135.0
+          ],
+          [
+            1278.8,
+            131.2
+          ],
+          [
+            1278.8,
+            106.2
+          ],
+          [
+            1271.2,
+            101.2
+          ],
+          [
+            1271.2,
+            92.5
+          ],
+          [
+            1261.2,
+            88.8
+          ],
+          [
+            1255.0,
+            98.8
+          ],
+          [
+            1241.2,
+            100.0
+          ],
+          [
+            1237.5,
+            83.8
+          ],
+          [
+            1228.8,
+            72.5
+          ],
+          [
+            1230.0,
+            66.2
+          ],
+          [
+            1222.5,
+            57.5
+          ],
+          [
+            1231.2,
+            47.5
+          ],
+          [
+            1247.5,
+            62.5
+          ],
+          [
+            1262.5,
+            53.8
+          ],
+          [
+            1276.2,
+            53.8
+          ],
+          [
+            1277.5,
+            37.5
+          ],
+          [
+            1211.2,
+            43.8
+          ],
+          [
+            1178.8,
+            33.8
+          ],
+          [
+            1170.0,
+            50.0
+          ]
+        ]
+      },
+      "length_m": null,
+      "metric_reliable": false,
+      "other_sources": [],
+      "quality": "moderate",
+      "room_id": null,
+      "source": {
+        "frame_index": 9671,
+        "image_id": "frame_009671",
+        "image_size": [
+          1280,
+          960
+        ],
+        "tier": "lidar"
+      },
+      "surface_extent": null,
+      "surface_id": null,
+      "surface_type": null,
+      "warnings": [
+        "metric extent unavailable: the region's rays hit no modelled surface (no wall, floor or ceiling there)"
+      ],
+      "width_m": null
+    }
+  ],
+  "openings": [
+    {
+      "connected_room_ids": [],
+      "connects": [
+        "unmodelled"
+      ],
+      "existence_quality": "moderate",
+      "height": null,
+      "id": "opening_001",
+      "left_jamb": {
+        "x": -0.0355,
+        "z": -1.4502
+      },
+      "observability": "strong",
+      "position": {
+        "x": 0.2411,
+        "z": -1.9542
+      },
+      "right_jamb": {
+        "x": 0.5177,
+        "z": -2.4583
+      },
+      "room_ids": [],
+      "sill_height": {
+        "confidence": null,
+        "interval": null,
+        "quality": null,
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.0
+      },
+      "type": "door",
+      "type_quality": "moderate",
+      "wall_id": "wall_001",
+      "width": {
+        "confidence": null,
+        "interval": {
+          "high": 1.5536,
+          "low": 0.7464
+        },
+        "quality": "weak",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 1.15
+      }
+    }
+  ],
+  "property": {
+    "footprint": {
+      "area": {
+        "confidence": null,
+        "interval": null,
+        "quality": "weak",
+        "source_tier": "lidar",
+        "unit": "m2",
+        "value": 23.5604
+      },
+      "complete": false,
+      "kind": "wall_graph_outer_boundary",
+      "note": "Outer face of the connected wall graph: an envelope of the recovered walls, NOT a verified property footprint.",
+      "polygon": [
+        {
+          "x": -2.1941,
+          "z": 8.58
+        },
+        {
+          "x": -2.4029,
+          "z": 8.9606
+        },
+        {
+          "x": -1.6099,
+          "z": 9.6504
+        },
+        {
+          "x": 0.4531,
+          "z": 5.891
+        },
+        {
+          "x": -1.4801,
+          "z": 5.0718
+        },
+        {
+          "x": -1.6708,
+          "z": 5.4193
+        },
+        {
+          "x": -2.0913,
+          "z": 5.1885
+        },
+        {
+          "x": -1.8733,
+          "z": 4.9051
+        },
+        {
+          "x": -2.8154,
+          "z": 4.506
+        },
+        {
+          "x": -1.6528,
+          "z": 2.3875
+        },
+        {
+          "x": -0.4169,
+          "z": 3.0657
+        },
+        {
+          "x": -1.4801,
+          "z": 5.0718
+        },
+        {
+          "x": 0.4531,
+          "z": 5.891
+        },
+        {
+          "x": 2.4034,
+          "z": 6.7175
+        },
+        {
+          "x": 4.5987,
+          "z": 2.7171
+        },
+        {
+          "x": 7.9213,
+          "z": 4.0186
+        },
+        {
+          "x": 6.3977,
+          "z": 6.7951
+        },
+        {
+          "x": 4.9216,
+          "z": 9.4849
+        },
+        {
+          "x": 2.799,
+          "z": 8.3201
+        },
+        {
+          "x": 3.4379,
+          "z": 7.1559
+        },
+        {
+          "x": 2.4034,
+          "z": 6.7175
+        },
+        {
+          "x": 0.4531,
+          "z": 5.891
+        },
+        {
+          "x": -1.6099,
+          "z": 9.6504
+        },
+        {
+          "x": -2.4029,
+          "z": 8.9606
+        },
+        {
+          "x": -3.1576,
+          "z": 8.3041
+        }
+      ]
+    },
+    "opening_count": 1,
+    "room_count": 3,
+    "status": "partial",
+    "wall_count": 26
+  },
+  "provenance": {
+    "assumptions": [
+      "Depth values are millimetres (0.001 m per unit).",
+      "Camera intrinsics refer to the RGB image and are scaled proportionally to the depth image.",
+      "Walls are vertical and floors horizontal in the capture's native frame (+Y is vertical).",
+      "Room polygons close only where wall evidence connects; nothing is extended beyond 0.5 m to close a corner.",
+      "Openings are structural gaps verified in 3D; door leaves, hardware and glazing are not detected."
+    ],
+    "ceiling_levels_m": [
+      3.016,
+      2.408
+    ],
+    "coordinate_frame": "capture-native world frame, top-down X-Z, metres; not reoriented or georeferenced",
+    "damage_analysis": {
+      "concealed_flags": 0,
+      "detections": 1,
+      "images_analysed": 24,
+      "method": {
+        "classes": [
+          "crack",
+          "stain"
+        ],
+        "confidence": "heuristic score, not a probability",
+        "crack": "black-hat dark-ridge extraction + elongation/thinness filters, straight lines rejected",
+        "detector": "deterministic OpenCV image processing (no learned model)",
+        "mapping": "pixel rays cast onto wall/floor/ceiling planes of the property; nearest valid surface; metric extent only if >= 80% of the outline agrees on one non-grazing surface",
+        "stain": "chroma deviation from a median-filtered Lab background; pure shadows rejected"
+      },
+      "rules": {
+        "CDR-001": "stain_near_floor_wall_junction",
+        "CDR-002": "stain_near_ceiling_junction",
+        "CDR-003": "stain_cluster_on_wall",
+        "CDR-004": "crack_at_opening_corner",
+        "CDR-005": "long_crack",
+        "CDR-006": "crack_with_colocated_stain"
+      },
+      "scope_items": 1,
+      "with_metric_extent": 0
+    },
+    "depth_scale_basis": "assumed 0.001 m per raw depth unit, supported by multi-frame consistency and indoor scale, not proven by the data",
+    "depth_scale_m_per_raw_unit": 0.001,
+    "fallback_decisions": [
+      {
+        "decision": "kept the supplied (original) poses",
+        "reason": "metrics got worse: floor_band_thickness_m, floor_peak_share",
+        "stage": "pose_refinement"
+      }
+    ],
+    "floor_height_y_m": -1.4921,
+    "frames": {
+      "available": 9745,
+      "frame_step": 1,
+      "max_frames": 400,
+      "used": 400
+    },
+    "parameters": {
+      "depth_scale_m_per_unit": 0.001,
+      "min_confidence": 2,
+      "voxel_size_m": 0.02
+    },
+    "pipeline": {
+      "schema_version": "1.0",
+      "spatialforge_version": "0.1.0",
+      "tier": "lidar"
+    },
+    "pose_convention": "camera-to-world, world +Y vertical",
+    "pose_refinement": {
+      "correction_accepted": false,
+      "fallback_reason": "metrics got worse: floor_band_thickness_m, floor_peak_share",
+      "max_rotation_deg": 0.5482,
+      "max_translation_m": 0.1144,
+      "mean_translation_m": 0.0401
+    },
+    "production_pose_source": "original",
+    "runtime": {
+      "damage_method": {
+        "description": "crack (dark thin ridges) and stain (chroma deviation) detectors; no learned model",
+        "name": "deterministic-opencv",
+        "version": "1"
+      },
+      "determinism": {
+        "deterministic": "LiDAR reconstruction, drift stage, planes, walls, rooms, openings, scale estimation, gravity, fusion, stitching, damage analysis, serialization and rendering are deterministic for identical inputs.",
+        "excluded_from_comparison": [
+          "timing",
+          "run_report.json timestamps and durations"
+        ],
+        "not_bit_reproducible": [
+          "PyCOLMAP structure-from-motion (video and photo tiers) is multi-threaded: registered image sets and poses can differ slightly between runs, and so can everything built on them.",
+          "Video seeking can land a few frames apart across decoder versions."
+        ]
+      },
+      "libraries": {
+        "Pillow": "12.2.0",
+        "numpy": "2.1.2",
+        "open3d": "0.20.0",
+        "opencv-python-headless": "5.0.0.93",
+        "pycolmap": "4.2.1",
+        "torch": "2.14.1",
+        "transformers": "5.18.0"
+      },
+      "platform": "Windows 10 AMD64",
+      "python": "3.11.9",
+      "python_implementation": "CPython",
+      "spatialforge_version": "0.1.0",
+      "tier": "lidar"
+    },
+    "stages": [
+      {
+        "name": "capture_validation",
+        "status": "ok"
+      },
+      {
+        "name": "metric_reconstruction_and_pose_check",
+        "status": "ok"
+      },
+      {
+        "name": "floor_and_ceiling_planes",
+        "status": "warning"
+      },
+      {
+        "name": "structural_walls",
+        "status": "ok"
+      },
+      {
+        "name": "room_topology",
+        "status": "ok"
+      },
+      {
+        "name": "openings",
+        "status": "ok"
+      }
+    ]
+  },
+  "rooms": [
+    {
+      "adjacent_room_ids": [],
+      "area": {
+        "confidence": null,
+        "interval": {
+          "high": 3.8783,
+          "low": 2.9154
+        },
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m2",
+        "value": 3.3434
+      },
+      "ceiling": {
+        "ambiguous": false,
+        "coverage": null,
+        "height": null,
+        "observed": false
+      },
+      "connected_room_ids": [],
+      "dimension_method": "opposite_wall_distances",
+      "id": "room_001",
+      "length": {
+        "confidence": null,
+        "interval": {
+          "high": 2.4529,
+          "low": 2.2117
+        },
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 2.3323
+      },
+      "opening_ids": [],
+      "opens_to_unmodelled": [],
+      "perimeter": {
+        "confidence": null,
+        "interval": {
+          "high": 8.0969,
+          "low": 7.0624
+        },
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 7.5468
+      },
+      "polygon": [
+        {
+          "x": -2.8154,
+          "z": 4.506
+        },
+        {
+          "x": -1.6528,
+          "z": 2.3875
+        },
+        {
+          "x": -0.4169,
+          "z": 3.0657
+        },
+        {
+          "x": -1.4801,
+          "z": 5.0718
+        }
+      ],
+      "topology_quality": "strong",
+      "wall_ids": [
+        "wall_003",
+        "wall_009",
+        "wall_011",
+        "wall_017"
+      ],
+      "wall_lengths": [
+        {
+          "confidence": null,
+          "interval": {
+            "high": 2.5448,
+            "low": 2.2881
+          },
+          "quality": "strong",
+          "source_tier": "lidar",
+          "unit": "m",
+          "value": 2.4165
+        },
+        {
+          "confidence": null,
+          "interval": {
+            "high": 1.5733,
+            "low": 1.3123
+          },
+          "quality": "strong",
+          "source_tier": "lidar",
+          "unit": "m",
+          "value": 1.4098
+        },
+        {
+          "confidence": null,
+          "interval": {
+            "high": 2.3974,
+            "low": 2.1429
+          },
+          "quality": "strong",
+          "source_tier": "lidar",
+          "unit": "m",
+          "value": 2.2704
+        },
+        {
+          "confidence": null,
+          "interval": {
+            "high": 1.5814,
+            "low": 1.319
+          },
+          "quality": "strong",
+          "source_tier": "lidar",
+          "unit": "m",
+          "value": 1.4502
+        }
+      ],
+      "width": {
+        "confidence": null,
+        "interval": {
+          "high": 1.5733,
+          "low": 1.3123
+        },
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 1.4428
+      }
+    },
+    {
+      "adjacent_room_ids": [
+        "room_003"
+      ],
+      "area": {
+        "confidence": null,
+        "interval": {
+          "high": 7.9722,
+          "low": 6.9018
+        },
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m2",
+        "value": 7.4285
+      },
+      "ceiling": {
+        "ambiguous": false,
+        "coverage": 0.638,
+        "height": {
+          "confidence": 0.1865,
+          "interval": {
+            "high": 2.4918,
+            "low": 2.3239
+          },
+          "quality": null,
+          "source_tier": "lidar",
+          "unit": "m",
+          "value": 2.4078
+        },
+        "observed": true
+      },
+      "connected_room_ids": [],
+      "dimension_method": "opposite_wall_distances",
+      "id": "room_002",
+      "length": {
+        "confidence": null,
+        "interval": {
+          "high": 3.2164,
+          "low": 2.9198
+        },
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 3.0681
+      },
+      "opening_ids": [],
+      "opens_to_unmodelled": [],
+      "perimeter": {
+        "confidence": null,
+        "interval": {
+          "high": 11.39,
+          "low": 10.5672
+        },
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 10.9786
+      },
+      "polygon": [
+        {
+          "x": 2.799,
+          "z": 8.3201
+        },
+        {
+          "x": 4.2751,
+          "z": 5.6303
+        },
+        {
+          "x": 6.3977,
+          "z": 6.7951
+        },
+        {
+          "x": 4.9216,
+          "z": 9.4849
+        }
+      ],
+      "topology_quality": "strong",
+      "wall_ids": [
+        "wall_002",
+        "wall_012",
+        "wall_015",
+        "wall_016"
+      ],
+      "wall_lengths": [
+        {
+          "confidence": null,
+          "interval": {
+            "high": 3.2164,
+            "low": 2.9198
+          },
+          "quality": "strong",
+          "source_tier": "lidar",
+          "unit": "m",
+          "value": 3.0681
+        },
+        {
+          "confidence": null,
+          "interval": {
+            "high": 2.4786,
+            "low": 2.3638
+          },
+          "quality": "strong",
+          "source_tier": "lidar",
+          "unit": "m",
+          "value": 2.4212
+        },
+        {
+          "confidence": null,
+          "interval": {
+            "high": 3.2164,
+            "low": 2.9198
+          },
+          "quality": "strong",
+          "source_tier": "lidar",
+          "unit": "m",
+          "value": 3.0681
+        },
+        {
+          "confidence": null,
+          "interval": {
+            "high": 2.4786,
+            "low": 2.3638
+          },
+          "quality": "strong",
+          "source_tier": "lidar",
+          "unit": "m",
+          "value": 2.4212
+        }
+      ],
+      "width": {
+        "confidence": null,
+        "interval": {
+          "high": 2.4786,
+          "low": 2.3638
+        },
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 2.4212
+      }
+    },
+    {
+      "adjacent_room_ids": [
+        "room_002"
+      ],
+      "area": {
+        "confidence": null,
+        "interval": {
+          "high": 13.3269,
+          "low": 11.509
+        },
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m2",
+        "value": 12.4074
+      },
+      "ceiling": {
+        "ambiguous": false,
+        "coverage": 0.692,
+        "height": {
+          "confidence": 0.0119,
+          "interval": {
+            "high": 3.237,
+            "low": 2.7942
+          },
+          "quality": null,
+          "source_tier": "lidar",
+          "unit": "m",
+          "value": 3.0156
+        },
+        "observed": true
+      },
+      "connected_room_ids": [],
+      "dimension_method": null,
+      "id": "room_003",
+      "length": null,
+      "opening_ids": [],
+      "opens_to_unmodelled": [],
+      "perimeter": {
+        "confidence": null,
+        "interval": {
+          "high": 17.2514,
+          "low": 15.9158
+        },
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 16.5836
+      },
+      "polygon": [
+        {
+          "x": 2.4034,
+          "z": 6.7175
+        },
+        {
+          "x": 4.5987,
+          "z": 2.7171
+        },
+        {
+          "x": 7.9213,
+          "z": 4.0186
+        },
+        {
+          "x": 6.3977,
+          "z": 6.7951
+        },
+        {
+          "x": 4.2751,
+          "z": 5.6303
+        },
+        {
+          "x": 3.4379,
+          "z": 7.1559
+        }
+      ],
+      "topology_quality": "strong",
+      "wall_ids": [
+        "wall_002",
+        "wall_003",
+        "wall_005",
+        "wall_006",
+        "wall_012",
+        "wall_016"
+      ],
+      "wall_lengths": [
+        {
+          "confidence": null,
+          "interval": {
+            "high": 4.6969,
+            "low": 4.4293
+          },
+          "quality": "strong",
+          "source_tier": "lidar",
+          "unit": "m",
+          "value": 4.5631
+        },
+        {
+          "confidence": null,
+          "interval": {
+            "high": 3.6492,
+            "low": 3.4877
+          },
+          "quality": "strong",
+          "source_tier": "lidar",
+          "unit": "m",
+          "value": 3.5685
+        },
+        {
+          "confidence": null,
+          "interval": {
+            "high": 3.3271,
+            "low": 3.0073
+          },
+          "quality": "strong",
+          "source_tier": "lidar",
+          "unit": "m",
+          "value": 3.1672
+        },
+        {
+          "confidence": null,
+          "interval": {
+            "high": 2.4927,
+            "low": 2.3497
+          },
+          "quality": "strong",
+          "source_tier": "lidar",
+          "unit": "m",
+          "value": 2.4212
+        },
+        {
+          "confidence": null,
+          "interval": {
+            "high": 1.8773,
+            "low": 1.6029
+          },
+          "quality": "strong",
+          "source_tier": "lidar",
+          "unit": "m",
+          "value": 1.7401
+        },
+        {
+          "confidence": null,
+          "interval": {
+            "high": 1.2082,
+            "low": 1.0389
+          },
+          "quality": "strong",
+          "source_tier": "lidar",
+          "unit": "m",
+          "value": 1.1235
+        }
+      ],
+      "width": null
+    }
+  ],
+  "schema_version": "1.0",
+  "scope_line_items": [
+    {
+      "action": "treat_stain_and_repaint",
+      "basis": "no reliable metric extent: quantity not estimated",
+      "damage_id": "damage_001",
+      "flag_id": null,
+      "item_id": "scope_001",
+      "quality": "weak",
+      "quantity": null,
+      "room_id": null,
+      "surface_id": null
+    }
+  ],
+  "timing": {
+    "stages": {
+      "damage": 22.657,
+      "frontend": 71.457,
+      "geometry": 49.395,
+      "gravity": 0.0,
+      "metric_scale": 0.0,
+      "openings": 16.269,
+      "rendering": 0.659,
+      "rooms": 0.175,
+      "serialization": 0.0,
+      "stitching": 0.0,
+      "structure": 9.72,
+      "validation": 0.754
+    },
+    "total_duration_seconds": 174.143
+  },
+  "unverified_openings": [
+    {
+      "connected_room_ids": [],
+      "connects": [],
+      "existence_quality": "weak",
+      "height": null,
+      "id": "unverified_001",
+      "left_jamb": {
+        "x": -2.008,
+        "z": 2.1442
+      },
+      "observability": "moderate",
+      "position": {
+        "x": -1.8396,
+        "z": 1.8373
+      },
+      "right_jamb": {
+        "x": -1.6712,
+        "z": 1.5305
+      },
+      "room_ids": [],
+      "sill_height": null,
+      "type": "opening",
+      "type_quality": "weak",
+      "wall_id": "wall_001",
+      "width": {
+        "confidence": null,
+        "interval": {
+          "high": 0.9473,
+          "low": 0.4527
+        },
+        "quality": "weak",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.7
+      }
+    }
+  ],
+  "walls": [
+    {
+      "end": {
+        "x": -2.8499,
+        "z": 3.6783
+      },
+      "evidence_quality": "strong",
+      "id": "wall_001",
+      "length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 9.1499
+      },
+      "observed_length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 7.6499
+      },
+      "opening_ids": [
+        "opening_001"
+      ],
+      "orientation": {
+        "confidence": null,
+        "interval": {
+          "high": 118.8972,
+          "low": 118.6152
+        },
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "deg",
+        "value": 118.7562
+      },
+      "position_uncertainty": {
+        "confidence": null,
+        "interval": null,
+        "quality": null,
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.0151
+      },
+      "room_ids": [],
+      "segments": [
+        {
+          "end": {
+            "x": 0.4695,
+            "z": -2.3706
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "strong",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 2.25
+          },
+          "start": {
+            "x": 1.552,
+            "z": -4.3431
+          }
+        },
+        {
+          "end": {
+            "x": -1.6953,
+            "z": 1.5743
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "strong",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 3.45
+          },
+          "start": {
+            "x": -0.0356,
+            "z": -1.4502
+          }
+        },
+        {
+          "end": {
+            "x": -2.8499,
+            "z": 3.6783
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "strong",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 1.95
+          },
+          "start": {
+            "x": -1.9118,
+            "z": 1.9688
+          }
+        }
+      ],
+      "start": {
+        "x": 1.552,
+        "z": -4.3431
+      }
+    },
+    {
+      "end": {
+        "x": 4.8299,
+        "z": 9.6521
+      },
+      "evidence_quality": "strong",
+      "id": "wall_002",
+      "length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 6.3978
+      },
+      "observed_length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 6.3978
+      },
+      "opening_ids": [],
+      "orientation": {
+        "confidence": null,
+        "interval": {
+          "high": 118.9757,
+          "low": 118.5367
+        },
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "deg",
+        "value": 118.7562
+      },
+      "position_uncertainty": {
+        "confidence": null,
+        "interval": null,
+        "quality": null,
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.0196
+      },
+      "room_ids": [
+        "room_002",
+        "room_003"
+      ],
+      "segments": [
+        {
+          "end": {
+            "x": 4.8299,
+            "z": 9.6521
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "strong",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 6.3978
+          },
+          "start": {
+            "x": 7.9078,
+            "z": 4.0433
+          }
+        }
+      ],
+      "start": {
+        "x": 7.9078,
+        "z": 4.0433
+      }
+    },
+    {
+      "end": {
+        "x": 3.6303,
+        "z": 7.2372
+      },
+      "evidence_quality": "strong",
+      "id": "wall_003",
+      "length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 7.1
+      },
+      "observed_length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 5.75
+      },
+      "opening_ids": [],
+      "orientation": {
+        "confidence": null,
+        "interval": {
+          "high": 23.6478,
+          "low": 22.28
+        },
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "deg",
+        "value": 22.9639
+      },
+      "position_uncertainty": {
+        "confidence": null,
+        "interval": null,
+        "quality": null,
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.0549
+      },
+      "room_ids": [
+        "room_001",
+        "room_003"
+      ],
+      "segments": [
+        {
+          "end": {
+            "x": -0.8814,
+            "z": 5.3255
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "strong",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 2.2
+          },
+          "start": {
+            "x": -2.9071,
+            "z": 4.4671
+          }
+        },
+        {
+          "end": {
+            "x": 3.6303,
+            "z": 7.2372
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "strong",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 3.55
+          },
+          "start": {
+            "x": 0.3616,
+            "z": 5.8522
+          }
+        }
+      ],
+      "start": {
+        "x": -2.9071,
+        "z": 4.4671
+      }
+    },
+    {
+      "end": {
+        "x": 0.0462,
+        "z": 4.6317
+      },
+      "evidence_quality": "strong",
+      "id": "wall_004",
+      "length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 5.3
+      },
+      "observed_length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 5.3
+      },
+      "opening_ids": [],
+      "orientation": {
+        "confidence": null,
+        "interval": {
+          "high": 119.2352,
+          "low": 118.2772
+        },
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "deg",
+        "value": 118.7562
+      },
+      "position_uncertainty": {
+        "confidence": null,
+        "interval": null,
+        "quality": null,
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.0355
+      },
+      "room_ids": [],
+      "segments": [
+        {
+          "end": {
+            "x": 0.0462,
+            "z": 4.6317
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "strong",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 5.3
+          },
+          "start": {
+            "x": 2.5959,
+            "z": -0.0146
+          }
+        }
+      ],
+      "start": {
+        "x": 2.5959,
+        "z": -0.0146
+      }
+    },
+    {
+      "end": {
+        "x": 2.3112,
+        "z": 6.8857
+      },
+      "evidence_quality": "strong",
+      "id": "wall_005",
+      "length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 5.0992
+      },
+      "observed_length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 5.0992
+      },
+      "opening_ids": [],
+      "orientation": {
+        "confidence": null,
+        "interval": {
+          "high": 119.4082,
+          "low": 118.1042
+        },
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "deg",
+        "value": 118.7562
+      },
+      "position_uncertainty": {
+        "confidence": null,
+        "interval": null,
+        "quality": null,
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.0464
+      },
+      "room_ids": [
+        "room_003"
+      ],
+      "segments": [
+        {
+          "end": {
+            "x": 2.3112,
+            "z": 6.8857
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "strong",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 5.0992
+          },
+          "start": {
+            "x": 4.7643,
+            "z": 2.4154
+          }
+        }
+      ],
+      "start": {
+        "x": 4.7643,
+        "z": 2.4154
+      }
+    },
+    {
+      "end": {
+        "x": 7.8859,
+        "z": 4.0048
+      },
+      "evidence_quality": "strong",
+      "id": "wall_006",
+      "length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 6.7
+      },
+      "observed_length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 5.05
+      },
+      "opening_ids": [],
+      "orientation": {
+        "confidence": null,
+        "interval": {
+          "high": 22.2087,
+          "low": 20.5719
+        },
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "deg",
+        "value": 21.3903
+      },
+      "position_uncertainty": {
+        "confidence": null,
+        "interval": null,
+        "quality": null,
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.0577
+      },
+      "room_ids": [
+        "room_003"
+      ],
+      "segments": [
+        {
+          "end": {
+            "x": 3.5096,
+            "z": 2.2906
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "strong",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 2.0
+          },
+          "start": {
+            "x": 1.6474,
+            "z": 1.5612
+          }
+        },
+        {
+          "end": {
+            "x": 7.8859,
+            "z": 4.0048
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "strong",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 3.05
+          },
+          "start": {
+            "x": 5.0459,
+            "z": 2.8924
+          }
+        }
+      ],
+      "start": {
+        "x": 1.6474,
+        "z": 1.5612
+      }
+    },
+    {
+      "end": {
+        "x": 0.2152,
+        "z": 4.6749
+      },
+      "evidence_quality": "strong",
+      "id": "wall_007",
+      "length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 4.95
+      },
+      "observed_length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 4.95
+      },
+      "opening_ids": [],
+      "orientation": {
+        "confidence": null,
+        "interval": {
+          "high": 119.1819,
+          "low": 118.3305
+        },
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "deg",
+        "value": 118.7562
+      },
+      "position_uncertainty": {
+        "confidence": null,
+        "interval": null,
+        "quality": null,
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.0294
+      },
+      "room_ids": [],
+      "segments": [
+        {
+          "end": {
+            "x": 0.2152,
+            "z": 4.6749
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "strong",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 4.95
+          },
+          "start": {
+            "x": 2.5966,
+            "z": 0.3354
+          }
+        }
+      ],
+      "start": {
+        "x": 2.5966,
+        "z": 0.3354
+      }
+    },
+    {
+      "end": {
+        "x": -1.7089,
+        "z": 9.8308
+      },
+      "evidence_quality": "strong",
+      "id": "wall_008",
+      "length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 4.7495
+      },
+      "observed_length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 4.7495
+      },
+      "opening_ids": [],
+      "orientation": {
+        "confidence": null,
+        "interval": {
+          "high": 119.3383,
+          "low": 118.1741
+        },
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "deg",
+        "value": 118.7562
+      },
+      "position_uncertainty": {
+        "confidence": null,
+        "interval": null,
+        "quality": null,
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.0386
+      },
+      "room_ids": [],
+      "segments": [
+        {
+          "end": {
+            "x": -1.7089,
+            "z": 9.8308
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "strong",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 4.7495
+          },
+          "start": {
+            "x": 0.576,
+            "z": 5.6671
+          }
+        }
+      ],
+      "start": {
+        "x": 0.576,
+        "z": 5.6671
+      }
+    },
+    {
+      "end": {
+        "x": -1.7294,
+        "z": 5.526
+      },
+      "evidence_quality": "strong",
+      "id": "wall_009",
+      "length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 3.7496
+      },
+      "observed_length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 3.7496
+      },
+      "opening_ids": [],
+      "orientation": {
+        "confidence": null,
+        "interval": {
+          "high": 119.8969,
+          "low": 117.6155
+        },
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "deg",
+        "value": 118.7562
+      },
+      "position_uncertainty": {
+        "confidence": null,
+        "interval": null,
+        "quality": null,
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.0597
+      },
+      "room_ids": [
+        "room_001"
+      ],
+      "segments": [
+        {
+          "end": {
+            "x": -1.7294,
+            "z": 5.526
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "strong",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 3.7496
+          },
+          "start": {
+            "x": 0.0745,
+            "z": 2.2388
+          }
+        }
+      ],
+      "start": {
+        "x": 0.0745,
+        "z": 2.2388
+      }
+    },
+    {
+      "end": {
+        "x": -1.5224,
+        "z": 9.7262
+      },
+      "evidence_quality": "moderate",
+      "id": "wall_010",
+      "length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "moderate",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 3.7
+      },
+      "observed_length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "moderate",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 3.7
+      },
+      "opening_ids": [],
+      "orientation": {
+        "confidence": null,
+        "interval": {
+          "high": 42.4989,
+          "low": 39.5325
+        },
+        "quality": "moderate",
+        "source_tier": "lidar",
+        "unit": "deg",
+        "value": 41.0157
+      },
+      "position_uncertainty": {
+        "confidence": null,
+        "interval": null,
+        "quality": null,
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.0767
+      },
+      "room_ids": [],
+      "segments": [
+        {
+          "end": {
+            "x": -1.5224,
+            "z": 9.7262
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "moderate",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 3.7
+          },
+          "start": {
+            "x": -4.3142,
+            "z": 7.298
+          }
+        }
+      ],
+      "start": {
+        "x": -4.3142,
+        "z": 7.298
+      }
+    },
+    {
+      "end": {
+        "x": -0.2558,
+        "z": 3.1541
+      },
+      "evidence_quality": "strong",
+      "id": "wall_011",
+      "length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 3.65
+      },
+      "observed_length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 3.65
+      },
+      "opening_ids": [],
+      "orientation": {
+        "confidence": null,
+        "interval": {
+          "high": 30.0509,
+          "low": 27.4615
+        },
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "deg",
+        "value": 28.7562
+      },
+      "position_uncertainty": {
+        "confidence": null,
+        "interval": null,
+        "quality": null,
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.066
+      },
+      "room_ids": [
+        "room_001"
+      ],
+      "segments": [
+        {
+          "end": {
+            "x": -0.2558,
+            "z": 3.1541
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "strong",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 3.65
+          },
+          "start": {
+            "x": -3.4557,
+            "z": 1.3981
+          }
+        }
+      ],
+      "start": {
+        "x": -3.4557,
+        "z": 1.3981
+      }
+    },
+    {
+      "end": {
+        "x": 2.686,
+        "z": 8.5261
+      },
+      "evidence_quality": "strong",
+      "id": "wall_012",
+      "length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 3.3471
+      },
+      "observed_length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 3.3471
+      },
+      "opening_ids": [],
+      "orientation": {
+        "confidence": null,
+        "interval": {
+          "high": 119.5652,
+          "low": 117.9472
+        },
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "deg",
+        "value": 118.7562
+      },
+      "position_uncertainty": {
+        "confidence": null,
+        "interval": null,
+        "quality": null,
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.0378
+      },
+      "room_ids": [
+        "room_002",
+        "room_003"
+      ],
+      "segments": [
+        {
+          "end": {
+            "x": 2.686,
+            "z": 8.5261
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "strong",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 3.3471
+          },
+          "start": {
+            "x": 4.2963,
+            "z": 5.5918
+          }
+        }
+      ],
+      "start": {
+        "x": 4.2963,
+        "z": 5.5918
+      }
+    },
+    {
+      "end": {
+        "x": -2.5465,
+        "z": 5.7805
+      },
+      "evidence_quality": "moderate",
+      "id": "wall_013",
+      "length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "moderate",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 4.4
+      },
+      "observed_length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "moderate",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 2.75
+      },
+      "opening_ids": [],
+      "orientation": {
+        "confidence": null,
+        "interval": {
+          "high": 129.5213,
+          "low": 125.6221
+        },
+        "quality": "moderate",
+        "source_tier": "lidar",
+        "unit": "deg",
+        "value": 127.5717
+      },
+      "position_uncertainty": {
+        "confidence": null,
+        "interval": null,
+        "quality": null,
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.0749
+      },
+      "room_ids": [],
+      "segments": [
+        {
+          "end": {
+            "x": -0.6868,
+            "z": 3.3631
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "moderate",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 1.35
+          },
+          "start": {
+            "x": 0.1364,
+            "z": 2.2931
+          }
+        },
+        {
+          "end": {
+            "x": -2.5465,
+            "z": 5.7805
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "moderate",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 1.4
+          },
+          "start": {
+            "x": -1.6929,
+            "z": 4.6709
+          }
+        }
+      ],
+      "start": {
+        "x": 0.1364,
+        "z": 2.2931
+      }
+    },
+    {
+      "end": {
+        "x": -0.8777,
+        "z": 8.0034
+      },
+      "evidence_quality": "strong",
+      "id": "wall_014",
+      "length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 2.75
+      },
+      "observed_length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 2.75
+      },
+      "opening_ids": [],
+      "orientation": {
+        "confidence": null,
+        "interval": {
+          "high": 126.2156,
+          "low": 122.0776
+        },
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "deg",
+        "value": 124.1466
+      },
+      "position_uncertainty": {
+        "confidence": null,
+        "interval": null,
+        "quality": null,
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.0795
+      },
+      "room_ids": [],
+      "segments": [
+        {
+          "end": {
+            "x": -0.8777,
+            "z": 8.0034
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "strong",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 2.75
+          },
+          "start": {
+            "x": 0.6659,
+            "z": 5.7275
+          }
+        }
+      ],
+      "start": {
+        "x": 0.6659,
+        "z": 5.7275
+      }
+    },
+    {
+      "end": {
+        "x": 5.0179,
+        "z": 9.5376
+      },
+      "evidence_quality": "strong",
+      "id": "wall_015",
+      "length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 2.6462
+      },
+      "observed_length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 2.6462
+      },
+      "opening_ids": [],
+      "orientation": {
+        "confidence": null,
+        "interval": {
+          "high": 30.6515,
+          "low": 26.8609
+        },
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "deg",
+        "value": 28.7562
+      },
+      "position_uncertainty": {
+        "confidence": null,
+        "interval": null,
+        "quality": null,
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.0701
+      },
+      "room_ids": [
+        "room_002"
+      ],
+      "segments": [
+        {
+          "end": {
+            "x": 5.0179,
+            "z": 9.5376
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "strong",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 2.6462
+          },
+          "start": {
+            "x": 2.698,
+            "z": 8.2645
+          }
+        }
+      ],
+      "start": {
+        "x": 2.698,
+        "z": 8.2645
+      }
+    },
+    {
+      "end": {
+        "x": 6.4988,
+        "z": 6.8506
+      },
+      "evidence_quality": "strong",
+      "id": "wall_016",
+      "length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 2.6
+      },
+      "observed_length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 2.6
+      },
+      "opening_ids": [],
+      "orientation": {
+        "confidence": null,
+        "interval": {
+          "high": 30.9091,
+          "low": 26.6033
+        },
+        "quality": "strong",
+        "source_tier": "lidar",
+        "unit": "deg",
+        "value": 28.7562
+      },
+      "position_uncertainty": {
+        "confidence": null,
+        "interval": null,
+        "quality": null,
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.0782
+      },
+      "room_ids": [
+        "room_002",
+        "room_003"
+      ],
+      "segments": [
+        {
+          "end": {
+            "x": 6.4988,
+            "z": 6.8506
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "strong",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 2.6
+          },
+          "start": {
+            "x": 4.2195,
+            "z": 5.5998
+          }
+        }
+      ],
+      "start": {
+        "x": 4.2195,
+        "z": 5.5998
+      }
+    },
+    {
+      "end": {
+        "x": -2.823,
+        "z": 4.5198
+      },
+      "evidence_quality": "moderate",
+      "id": "wall_017",
+      "length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "moderate",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 4.4482
+      },
+      "observed_length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "moderate",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 2.349
+      },
+      "opening_ids": [],
+      "orientation": {
+        "confidence": null,
+        "interval": {
+          "high": 120.9145,
+          "low": 116.5979
+        },
+        "quality": "moderate",
+        "source_tier": "lidar",
+        "unit": "deg",
+        "value": 118.7562
+      },
+      "position_uncertainty": {
+        "confidence": null,
+        "interval": null,
+        "quality": null,
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.0708
+      },
+      "room_ids": [
+        "room_001"
+      ],
+      "segments": [
+        {
+          "end": {
+            "x": -1.3082,
+            "z": 1.7594
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "moderate",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 1.2995
+          },
+          "start": {
+            "x": -0.6831,
+            "z": 0.6202
+          }
+        },
+        {
+          "end": {
+            "x": -2.823,
+            "z": 4.5198
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "moderate",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 1.0496
+          },
+          "start": {
+            "x": -2.3181,
+            "z": 3.5997
+          }
+        }
+      ],
+      "start": {
+        "x": -0.6831,
+        "z": 0.6202
+      }
+    },
+    {
+      "end": {
+        "x": -2.2907,
+        "z": 8.5524
+      },
+      "evidence_quality": "moderate",
+      "id": "wall_018",
+      "length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "moderate",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 2.2
+      },
+      "observed_length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "moderate",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 2.2
+      },
+      "opening_ids": [],
+      "orientation": {
+        "confidence": null,
+        "interval": {
+          "high": 18.5124,
+          "low": 13.4428
+        },
+        "quality": "moderate",
+        "source_tier": "lidar",
+        "unit": "deg",
+        "value": 15.9776
+      },
+      "position_uncertainty": {
+        "confidence": null,
+        "interval": null,
+        "quality": null,
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.0779
+      },
+      "room_ids": [],
+      "segments": [
+        {
+          "end": {
+            "x": -2.2907,
+            "z": 8.5524
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "moderate",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 2.2
+          },
+          "start": {
+            "x": -4.4057,
+            "z": 7.9468
+          }
+        }
+      ],
+      "start": {
+        "x": -4.4057,
+        "z": 7.9468
+      }
+    },
+    {
+      "end": {
+        "x": 3.7139,
+        "z": 5.0186
+      },
+      "evidence_quality": "moderate",
+      "id": "wall_019",
+      "length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "moderate",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 1.9481
+      },
+      "observed_length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "moderate",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 1.9481
+      },
+      "opening_ids": [],
+      "orientation": {
+        "confidence": null,
+        "interval": {
+          "high": 120.9707,
+          "low": 116.5417
+        },
+        "quality": "moderate",
+        "source_tier": "lidar",
+        "unit": "deg",
+        "value": 118.7562
+      },
+      "position_uncertainty": {
+        "confidence": null,
+        "interval": null,
+        "quality": null,
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.0603
+      },
+      "room_ids": [],
+      "segments": [
+        {
+          "end": {
+            "x": 3.7139,
+            "z": 5.0186
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "moderate",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 1.9481
+          },
+          "start": {
+            "x": 4.6511,
+            "z": 3.3107
+          }
+        }
+      ],
+      "start": {
+        "x": 4.6511,
+        "z": 3.3107
+      }
+    },
+    {
+      "end": {
+        "x": -4.9116,
+        "z": 7.5088
+      },
+      "evidence_quality": "moderate",
+      "id": "wall_020",
+      "length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "moderate",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 1.8
+      },
+      "observed_length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "moderate",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 1.8
+      },
+      "opening_ids": [],
+      "orientation": {
+        "confidence": null,
+        "interval": {
+          "high": 119.9912,
+          "low": 117.5212
+        },
+        "quality": "moderate",
+        "source_tier": "lidar",
+        "unit": "deg",
+        "value": 118.7562
+      },
+      "position_uncertainty": {
+        "confidence": null,
+        "interval": null,
+        "quality": null,
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.031
+      },
+      "room_ids": [],
+      "segments": [
+        {
+          "end": {
+            "x": -4.9116,
+            "z": 7.5088
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "moderate",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 1.8
+          },
+          "start": {
+            "x": -4.0457,
+            "z": 5.9308
+          }
+        }
+      ],
+      "start": {
+        "x": -4.0457,
+        "z": 5.9308
+      }
+    },
+    {
+      "end": {
+        "x": 6.2263,
+        "z": 3.4801
+      },
+      "evidence_quality": "moderate",
+      "id": "wall_021",
+      "length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "moderate",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 1.75
+      },
+      "observed_length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "moderate",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 1.75
+      },
+      "opening_ids": [],
+      "orientation": {
+        "confidence": null,
+        "interval": {
+          "high": 43.519,
+          "low": 36.4776
+        },
+        "quality": "moderate",
+        "source_tier": "lidar",
+        "unit": "deg",
+        "value": 39.9983
+      },
+      "position_uncertainty": {
+        "confidence": null,
+        "interval": null,
+        "quality": null,
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.0862
+      },
+      "room_ids": [],
+      "segments": [
+        {
+          "end": {
+            "x": 6.2263,
+            "z": 3.4801
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "moderate",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 1.75
+          },
+          "start": {
+            "x": 4.8856,
+            "z": 2.3552
+          }
+        }
+      ],
+      "start": {
+        "x": 4.8856,
+        "z": 2.3552
+      }
+    },
+    {
+      "end": {
+        "x": -1.292,
+        "z": 4.9976
+      },
+      "evidence_quality": "moderate",
+      "id": "wall_022",
+      "length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "moderate",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 1.6
+      },
+      "observed_length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "moderate",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 1.6
+      },
+      "opening_ids": [],
+      "orientation": {
+        "confidence": null,
+        "interval": {
+          "high": 33.5926,
+          "low": 23.9198
+        },
+        "quality": "moderate",
+        "source_tier": "lidar",
+        "unit": "deg",
+        "value": 28.7562
+      },
+      "position_uncertainty": {
+        "confidence": null,
+        "interval": null,
+        "quality": null,
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.1083
+      },
+      "room_ids": [],
+      "segments": [
+        {
+          "end": {
+            "x": -1.292,
+            "z": 4.9976
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "moderate",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 1.6
+          },
+          "start": {
+            "x": -2.6946,
+            "z": 4.2279
+          }
+        }
+      ],
+      "start": {
+        "x": -2.6946,
+        "z": 4.2279
+      }
+    },
+    {
+      "end": {
+        "x": 2.5108,
+        "z": 0.3627
+      },
+      "evidence_quality": "moderate",
+      "id": "wall_023",
+      "length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "moderate",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 1.55
+      },
+      "observed_length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "moderate",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 1.55
+      },
+      "opening_ids": [],
+      "orientation": {
+        "confidence": null,
+        "interval": {
+          "high": 44.2197,
+          "low": 35.7769
+        },
+        "quality": "moderate",
+        "source_tier": "lidar",
+        "unit": "deg",
+        "value": 39.9983
+      },
+      "position_uncertainty": {
+        "confidence": null,
+        "interval": null,
+        "quality": null,
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.0915
+      },
+      "room_ids": [],
+      "segments": [
+        {
+          "end": {
+            "x": 2.5108,
+            "z": 0.3627
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "moderate",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 1.55
+          },
+          "start": {
+            "x": 1.3235,
+            "z": -0.6336
+          }
+        }
+      ],
+      "start": {
+        "x": 1.3235,
+        "z": -0.6336
+      }
+    },
+    {
+      "end": {
+        "x": -0.5835,
+        "z": 2.1687
+      },
+      "evidence_quality": "weak",
+      "id": "wall_024",
+      "length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "weak",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 1.35
+      },
+      "observed_length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "weak",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 1.35
+      },
+      "opening_ids": [],
+      "orientation": {
+        "confidence": null,
+        "interval": {
+          "high": 47.1353,
+          "low": 34.5221
+        },
+        "quality": "weak",
+        "source_tier": "lidar",
+        "unit": "deg",
+        "value": 40.8287
+      },
+      "position_uncertainty": {
+        "confidence": null,
+        "interval": null,
+        "quality": null,
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.1194
+      },
+      "room_ids": [],
+      "segments": [
+        {
+          "end": {
+            "x": -0.5835,
+            "z": 2.1687
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "weak",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 1.35
+          },
+          "start": {
+            "x": -1.605,
+            "z": 1.2861
+          }
+        }
+      ],
+      "start": {
+        "x": -1.605,
+        "z": 1.2861
+      }
+    },
+    {
+      "end": {
+        "x": -1.5778,
+        "z": 5.4703
+      },
+      "evidence_quality": "weak",
+      "id": "wall_025",
+      "length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "weak",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 1.3481
+      },
+      "observed_length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "weak",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 1.3481
+      },
+      "opening_ids": [],
+      "orientation": {
+        "confidence": null,
+        "interval": {
+          "high": 33.9562,
+          "low": 23.5562
+        },
+        "quality": "weak",
+        "source_tier": "lidar",
+        "unit": "deg",
+        "value": 28.7562
+      },
+      "position_uncertainty": {
+        "confidence": null,
+        "interval": null,
+        "quality": null,
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.0982
+      },
+      "room_ids": [],
+      "segments": [
+        {
+          "end": {
+            "x": -1.5778,
+            "z": 5.4703
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "weak",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 1.3481
+          },
+          "start": {
+            "x": -2.7596,
+            "z": 4.8218
+          }
+        }
+      ],
+      "start": {
+        "x": -2.7596,
+        "z": 4.8218
+      }
+    },
+    {
+      "end": {
+        "x": -2.6323,
+        "z": 9.3785
+      },
+      "evidence_quality": "weak",
+      "id": "wall_026",
+      "length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "weak",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.8
+      },
+      "observed_length": {
+        "confidence": null,
+        "interval": null,
+        "quality": "weak",
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.8
+      },
+      "opening_ids": [],
+      "orientation": {
+        "confidence": null,
+        "interval": {
+          "high": 126.0224,
+          "low": 111.49
+        },
+        "quality": "weak",
+        "source_tier": "lidar",
+        "unit": "deg",
+        "value": 118.7562
+      },
+      "position_uncertainty": {
+        "confidence": null,
+        "interval": null,
+        "quality": null,
+        "source_tier": "lidar",
+        "unit": "m",
+        "value": 0.0816
+      },
+      "room_ids": [],
+      "segments": [
+        {
+          "end": {
+            "x": -2.6323,
+            "z": 9.3785
+          },
+          "length": {
+            "confidence": null,
+            "interval": null,
+            "quality": "weak",
+            "source_tier": "lidar",
+            "unit": "m",
+            "value": 0.8
+          },
+          "start": {
+            "x": -2.2474,
+            "z": 8.6772
+          }
+        }
+      ],
+      "start": {
+        "x": -2.2474,
+        "z": 8.6772
+      }
+    }
+  ],
+  "warning_records": [
+    {
+      "code": "STRUCTURE_CEILING_VARIATION",
+      "message": "ceiling at 3.02 m: local heights differ by 0.27 m between regions (plane tilt, residual drift, or separate rooms with different ceiling heights); interval widened accordingly",
+      "recoverable": true,
+      "severity": "info",
+      "stage": "geometry"
+    },
+    {
+      "code": "STRUCTURE_CEILING_VARIATION",
+      "message": "ceiling at 2.41 m: local heights differ by 0.10 m between regions (plane tilt, residual drift, or separate rooms with different ceiling heights); interval widened accordingly",
+      "recoverable": true,
+      "severity": "info",
+      "stage": "geometry"
+    },
+    {
+      "code": "STRUCTURE_CEILING_VARIATION",
+      "message": "2 separate ceiling levels found (3.02 m, 2.41 m); a single global height is not meaningful, assigning levels to rooms needs room segmentation (not implemented)",
+      "recoverable": true,
+      "severity": "info",
+      "stage": "geometry"
+    },
+    {
+      "code": "STRUCTURE_INCOMPLETE_TOPOLOGY",
+      "message": "Incomplete room topology: 13 of 23 structural walls are not part of any recovered room; unclosed wall regions remain.",
+      "recoverable": true,
+      "severity": "warning",
+      "stage": "rooms"
+    },
+    {
+      "code": "STRUCTURE_CEILING_NOT_OBSERVED",
+      "message": "Ceiling height was not observed for 1 of 3 rooms.",
+      "recoverable": true,
+      "severity": "info",
+      "stage": "geometry"
+    },
+    {
+      "code": "OPENINGS_RECALL_UNVERIFIED",
+      "message": "Opening recall has not been verified: openings in walls that were not detected, or in unclosed regions, are not reported.",
+      "recoverable": true,
+      "severity": "info",
+      "stage": "openings"
+    },
+    {
+      "code": "OPENINGS_LOW_CONFIDENCE_EXCLUDED",
+      "message": "1 low-confidence opening candidate(s) are excluded from the plan and listed under unverified_openings.",
+      "recoverable": true,
+      "severity": "info",
+      "stage": "openings"
+    },
+    {
+      "code": "NO_GROUND_TRUTH",
+      "message": "No physical ground truth was supplied: dimensions are not benchmarked, and intervals are diagnostic uncertainty ranges, not calibrated confidence intervals.",
+      "recoverable": true,
+      "severity": "info",
+      "stage": "pipeline"
+    },
+    {
+      "code": "DAMAGE_CANDIDATES_ONLY",
+      "message": "Damage analysis is deterministic image processing (cracks, stains) on RGB evidence: detections are candidates, not verified defects, and no ground truth was available to measure precision or recall.",
+      "recoverable": true,
+      "severity": "info",
+      "stage": "damage"
+    },
+    {
+      "code": "DAMAGE_NO_METRIC_EXTENT",
+      "message": "damage: 1 of 1 damage detections have no reliable metric extent (see each detection's warnings); they are kept without width, height or area.",
+      "recoverable": true,
+      "severity": "info",
+      "stage": "damage"
+    }
+  ],
+  "warnings": [
+    "ceiling at 3.02 m: local heights differ by 0.27 m between regions (plane tilt, residual drift, or separate rooms with different ceiling heights); interval widened accordingly",
+    "ceiling at 2.41 m: local heights differ by 0.10 m between regions (plane tilt, residual drift, or separate rooms with different ceiling heights); interval widened accordingly",
+    "2 separate ceiling levels found (3.02 m, 2.41 m); a single global height is not meaningful, assigning levels to rooms needs room segmentation (not implemented)",
+    "Incomplete room topology: 13 of 23 structural walls are not part of any recovered room; unclosed wall regions remain.",
+    "Ceiling height was not observed for 1 of 3 rooms.",
+    "Opening recall has not been verified: openings in walls that were not detected, or in unclosed regions, are not reported.",
+    "1 low-confidence opening candidate(s) are excluded from the plan and listed under unverified_openings.",
+    "No physical ground truth was supplied: dimensions are not benchmarked, and intervals are diagnostic uncertainty ranges, not calibrated confidence intervals.",
+    "Damage analysis is deterministic image processing (cracks, stains) on RGB evidence: detections are candidates, not verified defects, and no ground truth was available to measure precision or recall.",
+    "damage: 1 of 1 damage detections have no reliable metric extent (see each detection's warnings); they are kept without width, height or area."
+  ]
+}

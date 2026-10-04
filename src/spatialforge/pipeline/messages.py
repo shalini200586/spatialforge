@@ -42,6 +42,8 @@ _RULES: list[tuple[str, str, str, str, bool]] = [
     (r"Metric scale is weak|metric scale is weak", "VIDEO_WEAK_SCALE", "metric_scale", "warning", True),
     (r"Tracking is weak, so the property is reported as partial", "VIDEO_TRACKING_WEAK", "frontend", "warning", True),
     (r"Gravity \(vertical\) confidence is low", "GRAVITY_LOW_CONFIDENCE", "gravity", "warning", True),
+    (r"tracking was weak: retried once|denser-keyframe attempt", "VIDEO_DENSER_RETRY", "frontend", "info", True),
+    (r"axes agree to within|vertical axis differs from the camera-path normal", "GRAVITY_AXES_DISAGREE", "gravity", "warning", True),
     (r"depth keyframes were excluded from fusion|photo\(s\) were excluded from fusion", "DEPTH_FRAMES_EXCLUDED", "geometry", "warning", True),
     (r"Video tier: metres come from a monocular", "VIDEO_SCALE_ESTIMATED", "metric_scale", "info", True),
     (r"fused metric cloud has too few points", "CLOUD_TOO_SPARSE", "geometry", "error", False),

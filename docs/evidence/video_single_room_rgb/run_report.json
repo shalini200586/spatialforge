@@ -1,0 +1,1958 @@
+{
+  "config": {
+    "damage": true,
+    "debug": false,
+    "diagnostics": true,
+    "tier": "video"
+  },
+  "counts": {
+    "ceiling_levels": 0,
+    "concealed_damage_flags": 0,
+    "damage_regions": 1,
+    "openings": 0,
+    "rooms": 0,
+    "rooms_with_ceiling": 0,
+    "scope_line_items": 1,
+    "unverified_openings": 0,
+    "walls": 1,
+    "walls_strong_or_moderate": 1
+  },
+  "determinism": {
+    "deterministic": "LiDAR reconstruction, drift stage, planes, walls, rooms, openings, scale estimation, gravity, fusion, stitching, damage analysis, serialization and rendering are deterministic for identical inputs.",
+    "excluded_from_comparison": [
+      "timing",
+      "run_report.json timestamps and durations"
+    ],
+    "not_bit_reproducible": [
+      "PyCOLMAP structure-from-motion (video and photo tiers) is multi-threaded: registered image sets and poses can differ slightly between runs, and so can everything built on them.",
+      "Video seeking can land a few frames apart across decoder versions."
+    ]
+  },
+  "diagnostic_warnings": [],
+  "ended_at": "2026-10-04T04:01:24+00:00",
+  "errors": [],
+  "exit_code": 0,
+  "fallback_decisions": [
+    {
+      "decision": "tracking WEAK",
+      "reason": "24/145 keyframes registered (17%); 1978 sparse points; mean reprojection error 0.59 px; low registration ratio or sparse structure: trajectory may be fragmentary; 6 disconnected models were found (sizes [24, 23, 17, 16, 14]); only the largest is used",
+      "stage": "tracking_quality"
+    },
+    {
+      "decision": "moderate metric scale, 0.2066 m per SfM unit",
+      "reason": "median of 24 per-frame scales over 10180 correspondences; frame-to-frame spread 7%, standard error 1.4%, model floor 10%",
+      "stage": "metric_scale"
+    },
+    {
+      "decision": "each frame's depth is rescaled to the SfM geometry at the global metric scale",
+      "reason": "single-frame metric depth varies by tens of percent between frames; the global scale is the only absolute quantity taken from the depth model",
+      "stage": "depth_alignment"
+    },
+    {
+      "decision": "weak gravity estimate (confidence 0.31)",
+      "reason": "height-slab concentration within a cone around the least-variance axis of the camera path + wall-verticality refinement; sign: floor below the cameras at a plausible distance",
+      "stage": "gravity"
+    }
+  ],
+  "input": {
+    "name": "rgb.mp4",
+    "path": "C:\\captures\\single_room\\c00a170fe1\\rgb.mp4"
+  },
+  "metric_scale_available": true,
+  "output": {
+    "directory": "C:\\results\\video_single_room_rgb",
+    "files": [
+      "diagnostics/",
+      "plan.png",
+      "property.json",
+      "run_report.json"
+    ],
+    "incomplete": false
+  },
+  "plan": {
+    "openings_drawn": 0,
+    "rooms_drawn": 0,
+    "walls_drawn": 1
+  },
+  "production_pose_source": "sfm_scaled",
+  "report_version": 1,
+  "schema": "spatialforge.run_report",
+  "spatialforge_version": "0.1.0",
+  "stages": [
+    {
+      "duration_seconds": 6.762,
+      "error": null,
+      "stage": "validation",
+      "status": "ok",
+      "substages": [
+        "video_validation"
+      ],
+      "warnings": []
+    },
+    {
+      "duration_seconds": 252.114,
+      "error": null,
+      "stage": "frontend",
+      "status": "warning",
+      "substages": [
+        "keyframe_extraction",
+        "sfm_reconstruction"
+      ],
+      "warnings": [
+        {
+          "code": "GENERAL_WARNING",
+          "message": "tracking was weak: retried once with denser keyframes",
+          "recoverable": true,
+          "severity": "warning",
+          "stage": "frontend"
+        },
+        {
+          "code": "GENERAL_WARNING",
+          "message": "the denser-keyframe attempt registered more images and was kept",
+          "recoverable": true,
+          "severity": "warning",
+          "stage": "frontend"
+        }
+      ]
+    },
+    {
+      "duration_seconds": 124.884,
+      "error": null,
+      "stage": "metric_scale",
+      "status": "ok",
+      "substages": [
+        "metric_depth_and_scale"
+      ],
+      "warnings": []
+    },
+    {
+      "duration_seconds": 4.318,
+      "error": null,
+      "stage": "geometry",
+      "status": "ok",
+      "substages": [
+        "depth_fusion",
+        "floor_and_ceiling_planes"
+      ],
+      "warnings": []
+    },
+    {
+      "duration_seconds": 10.956,
+      "error": null,
+      "stage": "gravity",
+      "status": "warning",
+      "substages": [
+        "gravity_alignment"
+      ],
+      "warnings": [
+        {
+          "code": "GENERAL_WARNING",
+          "message": "slab, wall-normal and camera-path axes agree to within 39.5 degrees",
+          "recoverable": true,
+          "severity": "warning",
+          "stage": "gravity"
+        },
+        {
+          "code": "GENERAL_WARNING",
+          "message": "vertical axis differs from the camera-path normal by 39 degrees",
+          "recoverable": true,
+          "severity": "warning",
+          "stage": "gravity"
+        }
+      ]
+    },
+    {
+      "duration_seconds": 0.035,
+      "error": null,
+      "stage": "structure",
+      "status": "ok",
+      "substages": [
+        "structural_walls"
+      ],
+      "warnings": []
+    },
+    {
+      "duration_seconds": 0.0,
+      "error": null,
+      "stage": "rooms",
+      "status": "ok",
+      "substages": [
+        "room_topology"
+      ],
+      "warnings": []
+    },
+    {
+      "duration_seconds": 3.475,
+      "error": null,
+      "stage": "openings",
+      "status": "ok",
+      "substages": [
+        "openings"
+      ],
+      "warnings": []
+    },
+    {
+      "duration_seconds": 0.0,
+      "error": null,
+      "stage": "stitching",
+      "status": "skipped",
+      "substages": [],
+      "warnings": []
+    },
+    {
+      "duration_seconds": 10.204,
+      "error": null,
+      "stage": "damage",
+      "status": "ok",
+      "substages": [
+        "damage_analysis"
+      ],
+      "warnings": []
+    },
+    {
+      "duration_seconds": 0.45,
+      "error": null,
+      "stage": "rendering",
+      "status": "ok",
+      "substages": [
+        "rendering"
+      ],
+      "warnings": []
+    },
+    {
+      "duration_seconds": 0.282,
+      "error": null,
+      "stage": "serialization",
+      "status": "ok",
+      "substages": [
+        "serialization"
+      ],
+      "warnings": []
+    }
+  ],
+  "started_at": "2026-10-04T03:54:30+00:00",
+  "status": "partial",
+  "substages": [
+    {
+      "details": {
+        "codec": "hevc",
+        "container": "mp4",
+        "duration_s": 37.18333333333333,
+        "fps": 46.122814881219185,
+        "frame_count": 1715,
+        "height": 1440,
+        "probed_frames": 30,
+        "seek_ok": true,
+        "width": 1920
+      },
+      "duration_seconds": 6.762,
+      "name": "video_validation",
+      "stage": "validation",
+      "status": "ok"
+    },
+    {
+      "details": {
+        "candidates": 215,
+        "fps": 46.122814881219185,
+        "frames_decoded": 1714,
+        "keyframes": 83,
+        "rejected_blur": 22,
+        "rejected_rapid_motion": 11,
+        "stride": 8,
+        "thinned": 0,
+        "work_size": [
+          1280,
+          960
+        ]
+      },
+      "duration_seconds": 19.708,
+      "name": "keyframe_extraction",
+      "stage": "frontend",
+      "status": "ok"
+    },
+    {
+      "details": {
+        "feature_extraction_s": 44.66,
+        "keyframes": 145,
+        "mapping_s": 25.88,
+        "matching_s": 61.21,
+        "models": [
+          24,
+          23,
+          17,
+          16,
+          14,
+          13
+        ],
+        "registered": 24,
+        "reprojection_px": 0.5872096802552087,
+        "sparse_points": 1978,
+        "tracking_quality": "weak"
+      },
+      "duration_seconds": 232.406,
+      "name": "sfm_reconstruction",
+      "stage": "frontend",
+      "status": "warning"
+    },
+    {
+      "details": {
+        "correspondences": 10180,
+        "depth_frames": 24,
+        "metres_per_sfm_unit": 0.20658860343094645,
+        "scale_available": true,
+        "scale_quality": "moderate"
+      },
+      "duration_seconds": 124.884,
+      "name": "metric_depth_and_scale",
+      "stage": "metric_scale",
+      "status": "ok"
+    },
+    {
+      "details": {
+        "after_multiview_consistency": 898814,
+        "after_range_and_edge_filter": 950516,
+        "after_voxel_downsample": 61167,
+        "candidate_pixels": 950808,
+        "frames_used": 24,
+        "multiview_removed_fraction": 0.0544,
+        "warnings": []
+      },
+      "duration_seconds": 3.947,
+      "name": "depth_fusion",
+      "stage": "geometry",
+      "status": "ok"
+    },
+    {
+      "details": {
+        "baseline_concentration": 0.2685,
+        "concentration": 0.4018,
+        "confidence": 0.309,
+        "method": "height-slab concentration within a cone around the least-variance axis of the camera path + wall-verticality refinement",
+        "notes": [
+          "slab, wall-normal and camera-path axes agree to within 39.5 degrees",
+          "vertical axis differs from the camera-path normal by 39 degrees"
+        ],
+        "path_planarity": 0.0873,
+        "prior_angle_deg": 39.47,
+        "quality": "weak",
+        "sign_basis": "floor below the cameras at a plausible distance",
+        "up": [
+          -0.43545,
+          -0.37388,
+          -0.8189
+        ]
+      },
+      "duration_seconds": 10.956,
+      "name": "gravity_alignment",
+      "stage": "gravity",
+      "status": "warning"
+    },
+    {
+      "details": {},
+      "duration_seconds": 0.371,
+      "name": "floor_and_ceiling_planes",
+      "stage": "geometry",
+      "status": "ok"
+    },
+    {
+      "details": {
+        "rejected_candidates": 0,
+        "walls": 1
+      },
+      "duration_seconds": 0.035,
+      "name": "structural_walls",
+      "stage": "structure",
+      "status": "ok"
+    },
+    {
+      "details": {
+        "candidate_faces": 0,
+        "rejected_faces": 0,
+        "rooms": 0
+      },
+      "duration_seconds": 0.0,
+      "name": "room_topology",
+      "stage": "rooms",
+      "status": "ok"
+    },
+    {
+      "details": {
+        "accepted": 0,
+        "candidates": 0,
+        "frame_subsets": 3,
+        "low_confidence": 0,
+        "rejected": 0
+      },
+      "duration_seconds": 3.475,
+      "name": "openings",
+      "stage": "openings",
+      "status": "ok"
+    },
+    {
+      "details": {
+        "concealed_flags": 0,
+        "detections": 1,
+        "images": 24,
+        "scope_items": 1,
+        "with_metric_extent": 1
+      },
+      "duration_seconds": 10.204,
+      "name": "damage_analysis",
+      "stage": "damage",
+      "status": "ok"
+    },
+    {
+      "details": {},
+      "duration_seconds": 0.45,
+      "name": "rendering",
+      "stage": "rendering",
+      "status": "ok"
+    },
+    {
+      "details": {},
+      "duration_seconds": 0.282,
+      "name": "serialization",
+      "stage": "serialization",
+      "status": "ok"
+    }
+  ],
+  "tier": "video",
+  "tier_detection": "rgb.mp4 is a video file (.mp4)",
+  "tier_requested": "auto",
+  "total_duration_seconds": 414.277,
+  "tracking_quality": "weak",
+  "video": {
+    "gravity": {
+      "baseline_concentration": 0.2685,
+      "concentration": 0.4018,
+      "confidence": 0.309,
+      "method": "height-slab concentration within a cone around the least-variance axis of the camera path + wall-verticality refinement",
+      "notes": [
+        "slab, wall-normal and camera-path axes agree to within 39.5 degrees",
+        "vertical axis differs from the camera-path normal by 39 degrees"
+      ],
+      "path_planarity": 0.0873,
+      "prior_angle_deg": 39.47,
+      "quality": "weak",
+      "sign_basis": "floor below the cameras at a plausible distance",
+      "up": [
+        -0.43545,
+        -0.37388,
+        -0.8189
+      ]
+    },
+    "keyframe_strategy": {
+      "blur_filter": "Laplacian variance below a fraction of the local median",
+      "candidate_sampling": "fixed temporal rate, one decode pass",
+      "randomness": "none",
+      "rapid_motion_filter": "median LK flow between consecutive candidates",
+      "selection": "median LK parallax since the last keyframe, minimum temporal gap, maximum gap",
+      "thinning": "drop the keyframe whose removal leaves the smallest gap"
+    },
+    "keyframes": {
+      "candidates": 343,
+      "count": 145,
+      "keyframes": [
+        {
+          "file": "kf_0000.jpg",
+          "frame_index": 0,
+          "parallax": null,
+          "sharpness": 303.78,
+          "t_s": 0.0
+        },
+        {
+          "file": "kf_0001.jpg",
+          "frame_index": 35,
+          "parallax": 0.0486,
+          "sharpness": 338.07,
+          "t_s": 0.759
+        },
+        {
+          "file": "kf_0002.jpg",
+          "frame_index": 45,
+          "parallax": 0.101,
+          "sharpness": 201.73,
+          "t_s": 0.976
+        },
+        {
+          "file": "kf_0003.jpg",
+          "frame_index": 55,
+          "parallax": 0.2186,
+          "sharpness": 230.15,
+          "t_s": 1.192
+        },
+        {
+          "file": "kf_0004.jpg",
+          "frame_index": 65,
+          "parallax": 0.1565,
+          "sharpness": 217.47,
+          "t_s": 1.409
+        },
+        {
+          "file": "kf_0005.jpg",
+          "frame_index": 75,
+          "parallax": 0.1754,
+          "sharpness": 245.78,
+          "t_s": 1.626
+        },
+        {
+          "file": "kf_0006.jpg",
+          "frame_index": 85,
+          "parallax": 0.1166,
+          "sharpness": 243.93,
+          "t_s": 1.843
+        },
+        {
+          "file": "kf_0007.jpg",
+          "frame_index": 95,
+          "parallax": 0.0384,
+          "sharpness": 325.49,
+          "t_s": 2.06
+        },
+        {
+          "file": "kf_0008.jpg",
+          "frame_index": 105,
+          "parallax": 0.0468,
+          "sharpness": 269.4,
+          "t_s": 2.277
+        },
+        {
+          "file": "kf_0009.jpg",
+          "frame_index": 120,
+          "parallax": 0.041,
+          "sharpness": 185.15,
+          "t_s": 2.602
+        },
+        {
+          "file": "kf_0010.jpg",
+          "frame_index": 130,
+          "parallax": 0.045,
+          "sharpness": 169.02,
+          "t_s": 2.819
+        },
+        {
+          "file": "kf_0011.jpg",
+          "frame_index": 140,
+          "parallax": 0.0391,
+          "sharpness": 172.48,
+          "t_s": 3.035
+        },
+        {
+          "file": "kf_0012.jpg",
+          "frame_index": 150,
+          "parallax": 0.0324,
+          "sharpness": 183.37,
+          "t_s": 3.252
+        },
+        {
+          "file": "kf_0013.jpg",
+          "frame_index": 160,
+          "parallax": 0.0336,
+          "sharpness": 183.41,
+          "t_s": 3.469
+        },
+        {
+          "file": "kf_0014.jpg",
+          "frame_index": 170,
+          "parallax": 0.0329,
+          "sharpness": 183.84,
+          "t_s": 3.686
+        },
+        {
+          "file": "kf_0015.jpg",
+          "frame_index": 190,
+          "parallax": 0.0308,
+          "sharpness": 151.36,
+          "t_s": 4.119
+        },
+        {
+          "file": "kf_0016.jpg",
+          "frame_index": 200,
+          "parallax": 0.0402,
+          "sharpness": 97.68,
+          "t_s": 4.336
+        },
+        {
+          "file": "kf_0017.jpg",
+          "frame_index": 210,
+          "parallax": 1.0,
+          "sharpness": 13.54,
+          "t_s": 4.553
+        },
+        {
+          "file": "kf_0018.jpg",
+          "frame_index": 245,
+          "parallax": 1.0,
+          "sharpness": 22.48,
+          "t_s": 5.312
+        },
+        {
+          "file": "kf_0019.jpg",
+          "frame_index": 255,
+          "parallax": 0.4193,
+          "sharpness": 21.22,
+          "t_s": 5.529
+        },
+        {
+          "file": "kf_0020.jpg",
+          "frame_index": 265,
+          "parallax": 0.231,
+          "sharpness": 42.57,
+          "t_s": 5.746
+        },
+        {
+          "file": "kf_0021.jpg",
+          "frame_index": 275,
+          "parallax": 0.1178,
+          "sharpness": 117.44,
+          "t_s": 5.962
+        },
+        {
+          "file": "kf_0022.jpg",
+          "frame_index": 285,
+          "parallax": 0.1151,
+          "sharpness": 102.12,
+          "t_s": 6.179
+        },
+        {
+          "file": "kf_0023.jpg",
+          "frame_index": 295,
+          "parallax": 0.1013,
+          "sharpness": 124.41,
+          "t_s": 6.396
+        },
+        {
+          "file": "kf_0024.jpg",
+          "frame_index": 305,
+          "parallax": 0.1133,
+          "sharpness": 111.62,
+          "t_s": 6.613
+        },
+        {
+          "file": "kf_0025.jpg",
+          "frame_index": 315,
+          "parallax": 0.1491,
+          "sharpness": 108.42,
+          "t_s": 6.83
+        },
+        {
+          "file": "kf_0026.jpg",
+          "frame_index": 325,
+          "parallax": 0.1767,
+          "sharpness": 125.16,
+          "t_s": 7.046
+        },
+        {
+          "file": "kf_0027.jpg",
+          "frame_index": 335,
+          "parallax": 0.151,
+          "sharpness": 178.28,
+          "t_s": 7.263
+        },
+        {
+          "file": "kf_0028.jpg",
+          "frame_index": 345,
+          "parallax": 0.155,
+          "sharpness": 185.04,
+          "t_s": 7.48
+        },
+        {
+          "file": "kf_0029.jpg",
+          "frame_index": 355,
+          "parallax": 0.1567,
+          "sharpness": 217.73,
+          "t_s": 7.697
+        },
+        {
+          "file": "kf_0030.jpg",
+          "frame_index": 365,
+          "parallax": 0.1166,
+          "sharpness": 211.13,
+          "t_s": 7.914
+        },
+        {
+          "file": "kf_0031.jpg",
+          "frame_index": 375,
+          "parallax": 0.108,
+          "sharpness": 246.53,
+          "t_s": 8.13
+        },
+        {
+          "file": "kf_0032.jpg",
+          "frame_index": 385,
+          "parallax": 0.0711,
+          "sharpness": 301.43,
+          "t_s": 8.347
+        },
+        {
+          "file": "kf_0033.jpg",
+          "frame_index": 395,
+          "parallax": 0.0736,
+          "sharpness": 248.48,
+          "t_s": 8.564
+        },
+        {
+          "file": "kf_0034.jpg",
+          "frame_index": 405,
+          "parallax": 0.0792,
+          "sharpness": 267.24,
+          "t_s": 8.781
+        },
+        {
+          "file": "kf_0035.jpg",
+          "frame_index": 415,
+          "parallax": 0.0435,
+          "sharpness": 328.01,
+          "t_s": 8.998
+        },
+        {
+          "file": "kf_0036.jpg",
+          "frame_index": 445,
+          "parallax": 0.0327,
+          "sharpness": 285.2,
+          "t_s": 9.648
+        },
+        {
+          "file": "kf_0037.jpg",
+          "frame_index": 455,
+          "parallax": 0.0426,
+          "sharpness": 287.35,
+          "t_s": 9.865
+        },
+        {
+          "file": "kf_0038.jpg",
+          "frame_index": 470,
+          "parallax": 0.0372,
+          "sharpness": 350.85,
+          "t_s": 10.19
+        },
+        {
+          "file": "kf_0039.jpg",
+          "frame_index": 490,
+          "parallax": 0.0324,
+          "sharpness": 325.93,
+          "t_s": 10.624
+        },
+        {
+          "file": "kf_0040.jpg",
+          "frame_index": 510,
+          "parallax": 0.0378,
+          "sharpness": 301.68,
+          "t_s": 11.057
+        },
+        {
+          "file": "kf_0041.jpg",
+          "frame_index": 520,
+          "parallax": 0.0415,
+          "sharpness": 348.4,
+          "t_s": 11.274
+        },
+        {
+          "file": "kf_0042.jpg",
+          "frame_index": 545,
+          "parallax": 0.0397,
+          "sharpness": 247.69,
+          "t_s": 11.816
+        },
+        {
+          "file": "kf_0043.jpg",
+          "frame_index": 555,
+          "parallax": 0.1394,
+          "sharpness": 92.05,
+          "t_s": 12.033
+        },
+        {
+          "file": "kf_0044.jpg",
+          "frame_index": 565,
+          "parallax": 0.1618,
+          "sharpness": 23.89,
+          "t_s": 12.25
+        },
+        {
+          "file": "kf_0045.jpg",
+          "frame_index": 575,
+          "parallax": 0.2001,
+          "sharpness": 19.31,
+          "t_s": 12.467
+        },
+        {
+          "file": "kf_0046.jpg",
+          "frame_index": 590,
+          "parallax": 0.4843,
+          "sharpness": 24.92,
+          "t_s": 12.792
+        },
+        {
+          "file": "kf_0047.jpg",
+          "frame_index": 600,
+          "parallax": 0.1534,
+          "sharpness": 36.24,
+          "t_s": 13.009
+        },
+        {
+          "file": "kf_0048.jpg",
+          "frame_index": 610,
+          "parallax": 0.1257,
+          "sharpness": 71.3,
+          "t_s": 13.226
+        },
+        {
+          "file": "kf_0049.jpg",
+          "frame_index": 620,
+          "parallax": 0.1301,
+          "sharpness": 166.05,
+          "t_s": 13.442
+        },
+        {
+          "file": "kf_0050.jpg",
+          "frame_index": 630,
+          "parallax": 0.0654,
+          "sharpness": 234.74,
+          "t_s": 13.659
+        },
+        {
+          "file": "kf_0051.jpg",
+          "frame_index": 640,
+          "parallax": 0.0469,
+          "sharpness": 265.1,
+          "t_s": 13.876
+        },
+        {
+          "file": "kf_0052.jpg",
+          "frame_index": 650,
+          "parallax": 0.0567,
+          "sharpness": 198.24,
+          "t_s": 14.093
+        },
+        {
+          "file": "kf_0053.jpg",
+          "frame_index": 660,
+          "parallax": 0.0413,
+          "sharpness": 199.06,
+          "t_s": 14.31
+        },
+        {
+          "file": "kf_0054.jpg",
+          "frame_index": 670,
+          "parallax": 0.0545,
+          "sharpness": 217.52,
+          "t_s": 14.526
+        },
+        {
+          "file": "kf_0055.jpg",
+          "frame_index": 680,
+          "parallax": 0.0605,
+          "sharpness": 321.92,
+          "t_s": 14.743
+        },
+        {
+          "file": "kf_0056.jpg",
+          "frame_index": 690,
+          "parallax": 0.091,
+          "sharpness": 268.06,
+          "t_s": 14.96
+        },
+        {
+          "file": "kf_0057.jpg",
+          "frame_index": 700,
+          "parallax": 0.0695,
+          "sharpness": 200.3,
+          "t_s": 15.177
+        },
+        {
+          "file": "kf_0058.jpg",
+          "frame_index": 710,
+          "parallax": 0.0549,
+          "sharpness": 231.02,
+          "t_s": 15.394
+        },
+        {
+          "file": "kf_0059.jpg",
+          "frame_index": 730,
+          "parallax": 0.1929,
+          "sharpness": 124.92,
+          "t_s": 15.827
+        },
+        {
+          "file": "kf_0060.jpg",
+          "frame_index": 745,
+          "parallax": 0.0318,
+          "sharpness": 162.38,
+          "t_s": 16.153
+        },
+        {
+          "file": "kf_0061.jpg",
+          "frame_index": 755,
+          "parallax": 0.0594,
+          "sharpness": 144.77,
+          "t_s": 16.369
+        },
+        {
+          "file": "kf_0062.jpg",
+          "frame_index": 775,
+          "parallax": 0.0457,
+          "sharpness": 141.2,
+          "t_s": 16.803
+        },
+        {
+          "file": "kf_0063.jpg",
+          "frame_index": 785,
+          "parallax": 0.0514,
+          "sharpness": 141.47,
+          "t_s": 17.02
+        },
+        {
+          "file": "kf_0064.jpg",
+          "frame_index": 805,
+          "parallax": 0.0573,
+          "sharpness": 103.27,
+          "t_s": 17.453
+        },
+        {
+          "file": "kf_0065.jpg",
+          "frame_index": 815,
+          "parallax": 0.0814,
+          "sharpness": 131.62,
+          "t_s": 17.67
+        },
+        {
+          "file": "kf_0066.jpg",
+          "frame_index": 825,
+          "parallax": 0.0705,
+          "sharpness": 121.74,
+          "t_s": 17.887
+        },
+        {
+          "file": "kf_0067.jpg",
+          "frame_index": 835,
+          "parallax": 0.0637,
+          "sharpness": 133.56,
+          "t_s": 18.104
+        },
+        {
+          "file": "kf_0068.jpg",
+          "frame_index": 845,
+          "parallax": 0.0895,
+          "sharpness": 127.78,
+          "t_s": 18.321
+        },
+        {
+          "file": "kf_0069.jpg",
+          "frame_index": 855,
+          "parallax": 0.0635,
+          "sharpness": 123.03,
+          "t_s": 18.537
+        },
+        {
+          "file": "kf_0070.jpg",
+          "frame_index": 865,
+          "parallax": 0.0565,
+          "sharpness": 125.89,
+          "t_s": 18.754
+        },
+        {
+          "file": "kf_0071.jpg",
+          "frame_index": 875,
+          "parallax": 0.0653,
+          "sharpness": 98.9,
+          "t_s": 18.971
+        },
+        {
+          "file": "kf_0072.jpg",
+          "frame_index": 885,
+          "parallax": 0.0772,
+          "sharpness": 73.58,
+          "t_s": 19.188
+        },
+        {
+          "file": "kf_0073.jpg",
+          "frame_index": 895,
+          "parallax": 0.079,
+          "sharpness": 68.66,
+          "t_s": 19.405
+        },
+        {
+          "file": "kf_0074.jpg",
+          "frame_index": 905,
+          "parallax": 0.0856,
+          "sharpness": 99.19,
+          "t_s": 19.622
+        },
+        {
+          "file": "kf_0075.jpg",
+          "frame_index": 915,
+          "parallax": 0.0335,
+          "sharpness": 123.14,
+          "t_s": 19.838
+        },
+        {
+          "file": "kf_0076.jpg",
+          "frame_index": 925,
+          "parallax": 0.0561,
+          "sharpness": 84.14,
+          "t_s": 20.055
+        },
+        {
+          "file": "kf_0077.jpg",
+          "frame_index": 935,
+          "parallax": 0.0976,
+          "sharpness": 56.3,
+          "t_s": 20.272
+        },
+        {
+          "file": "kf_0078.jpg",
+          "frame_index": 945,
+          "parallax": 0.036,
+          "sharpness": 54.1,
+          "t_s": 20.489
+        },
+        {
+          "file": "kf_0079.jpg",
+          "frame_index": 965,
+          "parallax": 0.0352,
+          "sharpness": 79.54,
+          "t_s": 20.922
+        },
+        {
+          "file": "kf_0080.jpg",
+          "frame_index": 975,
+          "parallax": 0.0738,
+          "sharpness": 63.71,
+          "t_s": 21.139
+        },
+        {
+          "file": "kf_0081.jpg",
+          "frame_index": 990,
+          "parallax": 1.0,
+          "sharpness": 339.42,
+          "t_s": 21.464
+        },
+        {
+          "file": "kf_0082.jpg",
+          "frame_index": 1005,
+          "parallax": 0.0341,
+          "sharpness": 570.64,
+          "t_s": 21.79
+        },
+        {
+          "file": "kf_0083.jpg",
+          "frame_index": 1015,
+          "parallax": 0.0479,
+          "sharpness": 412.77,
+          "t_s": 22.006
+        },
+        {
+          "file": "kf_0084.jpg",
+          "frame_index": 1025,
+          "parallax": 0.0644,
+          "sharpness": 359.84,
+          "t_s": 22.223
+        },
+        {
+          "file": "kf_0085.jpg",
+          "frame_index": 1035,
+          "parallax": 0.0727,
+          "sharpness": 385.64,
+          "t_s": 22.44
+        },
+        {
+          "file": "kf_0086.jpg",
+          "frame_index": 1045,
+          "parallax": 0.0929,
+          "sharpness": 200.92,
+          "t_s": 22.657
+        },
+        {
+          "file": "kf_0087.jpg",
+          "frame_index": 1055,
+          "parallax": 0.0996,
+          "sharpness": 151.97,
+          "t_s": 22.874
+        },
+        {
+          "file": "kf_0088.jpg",
+          "frame_index": 1065,
+          "parallax": 0.0709,
+          "sharpness": 137.21,
+          "t_s": 23.091
+        },
+        {
+          "file": "kf_0089.jpg",
+          "frame_index": 1075,
+          "parallax": 0.0971,
+          "sharpness": 149.82,
+          "t_s": 23.307
+        },
+        {
+          "file": "kf_0090.jpg",
+          "frame_index": 1095,
+          "parallax": 0.2164,
+          "sharpness": 145.83,
+          "t_s": 23.741
+        },
+        {
+          "file": "kf_0091.jpg",
+          "frame_index": 1105,
+          "parallax": 0.0699,
+          "sharpness": 169.29,
+          "t_s": 23.958
+        },
+        {
+          "file": "kf_0092.jpg",
+          "frame_index": 1115,
+          "parallax": 0.0494,
+          "sharpness": 168.96,
+          "t_s": 24.175
+        },
+        {
+          "file": "kf_0093.jpg",
+          "frame_index": 1125,
+          "parallax": 0.055,
+          "sharpness": 205.66,
+          "t_s": 24.391
+        },
+        {
+          "file": "kf_0094.jpg",
+          "frame_index": 1135,
+          "parallax": 0.1614,
+          "sharpness": 83.12,
+          "t_s": 24.608
+        },
+        {
+          "file": "kf_0095.jpg",
+          "frame_index": 1175,
+          "parallax": 0.2073,
+          "sharpness": 81.47,
+          "t_s": 25.475
+        },
+        {
+          "file": "kf_0096.jpg",
+          "frame_index": 1190,
+          "parallax": 0.2387,
+          "sharpness": 145.87,
+          "t_s": 25.801
+        },
+        {
+          "file": "kf_0097.jpg",
+          "frame_index": 1200,
+          "parallax": 0.2451,
+          "sharpness": 190.07,
+          "t_s": 26.017
+        },
+        {
+          "file": "kf_0098.jpg",
+          "frame_index": 1210,
+          "parallax": 0.1719,
+          "sharpness": 151.32,
+          "t_s": 26.234
+        },
+        {
+          "file": "kf_0099.jpg",
+          "frame_index": 1220,
+          "parallax": 0.1277,
+          "sharpness": 258.41,
+          "t_s": 26.451
+        },
+        {
+          "file": "kf_0100.jpg",
+          "frame_index": 1230,
+          "parallax": 0.086,
+          "sharpness": 231.8,
+          "t_s": 26.668
+        },
+        {
+          "file": "kf_0101.jpg",
+          "frame_index": 1240,
+          "parallax": 0.0445,
+          "sharpness": 254.05,
+          "t_s": 26.885
+        },
+        {
+          "file": "kf_0102.jpg",
+          "frame_index": 1250,
+          "parallax": 0.037,
+          "sharpness": 171.62,
+          "t_s": 27.102
+        },
+        {
+          "file": "kf_0103.jpg",
+          "frame_index": 1260,
+          "parallax": 0.0891,
+          "sharpness": 147.83,
+          "t_s": 27.318
+        },
+        {
+          "file": "kf_0104.jpg",
+          "frame_index": 1270,
+          "parallax": 0.0464,
+          "sharpness": 175.32,
+          "t_s": 27.535
+        },
+        {
+          "file": "kf_0105.jpg",
+          "frame_index": 1290,
+          "parallax": 0.0435,
+          "sharpness": 137.62,
+          "t_s": 27.969
+        },
+        {
+          "file": "kf_0106.jpg",
+          "frame_index": 1300,
+          "parallax": 0.0978,
+          "sharpness": 123.7,
+          "t_s": 28.186
+        },
+        {
+          "file": "kf_0107.jpg",
+          "frame_index": 1310,
+          "parallax": 0.1347,
+          "sharpness": 108.2,
+          "t_s": 28.402
+        },
+        {
+          "file": "kf_0108.jpg",
+          "frame_index": 1320,
+          "parallax": 0.1044,
+          "sharpness": 118.83,
+          "t_s": 28.619
+        },
+        {
+          "file": "kf_0109.jpg",
+          "frame_index": 1330,
+          "parallax": 0.0901,
+          "sharpness": 76.49,
+          "t_s": 28.836
+        },
+        {
+          "file": "kf_0110.jpg",
+          "frame_index": 1340,
+          "parallax": 0.0858,
+          "sharpness": 45.55,
+          "t_s": 29.053
+        },
+        {
+          "file": "kf_0111.jpg",
+          "frame_index": 1350,
+          "parallax": 0.0941,
+          "sharpness": 40.09,
+          "t_s": 29.27
+        },
+        {
+          "file": "kf_0112.jpg",
+          "frame_index": 1360,
+          "parallax": 0.065,
+          "sharpness": 39.8,
+          "t_s": 29.486
+        },
+        {
+          "file": "kf_0113.jpg",
+          "frame_index": 1370,
+          "parallax": 0.1727,
+          "sharpness": 16.03,
+          "t_s": 29.703
+        },
+        {
+          "file": "kf_0114.jpg",
+          "frame_index": 1380,
+          "parallax": 1.0,
+          "sharpness": 18.3,
+          "t_s": 29.92
+        },
+        {
+          "file": "kf_0115.jpg",
+          "frame_index": 1390,
+          "parallax": 1.0,
+          "sharpness": 22.88,
+          "t_s": 30.137
+        },
+        {
+          "file": "kf_0116.jpg",
+          "frame_index": 1405,
+          "parallax": 1.0,
+          "sharpness": 31.36,
+          "t_s": 30.462
+        },
+        {
+          "file": "kf_0117.jpg",
+          "frame_index": 1415,
+          "parallax": 0.3141,
+          "sharpness": 90.87,
+          "t_s": 30.679
+        },
+        {
+          "file": "kf_0118.jpg",
+          "frame_index": 1425,
+          "parallax": 0.1585,
+          "sharpness": 114.76,
+          "t_s": 30.896
+        },
+        {
+          "file": "kf_0119.jpg",
+          "frame_index": 1435,
+          "parallax": 0.0925,
+          "sharpness": 197.51,
+          "t_s": 31.113
+        },
+        {
+          "file": "kf_0120.jpg",
+          "frame_index": 1445,
+          "parallax": 0.052,
+          "sharpness": 121.53,
+          "t_s": 31.329
+        },
+        {
+          "file": "kf_0121.jpg",
+          "frame_index": 1455,
+          "parallax": 0.1172,
+          "sharpness": 100.63,
+          "t_s": 31.546
+        },
+        {
+          "file": "kf_0122.jpg",
+          "frame_index": 1465,
+          "parallax": 0.1625,
+          "sharpness": 69.04,
+          "t_s": 31.763
+        },
+        {
+          "file": "kf_0123.jpg",
+          "frame_index": 1475,
+          "parallax": 0.1063,
+          "sharpness": 106.29,
+          "t_s": 31.98
+        },
+        {
+          "file": "kf_0124.jpg",
+          "frame_index": 1485,
+          "parallax": 0.0307,
+          "sharpness": 174.63,
+          "t_s": 32.197
+        },
+        {
+          "file": "kf_0125.jpg",
+          "frame_index": 1495,
+          "parallax": 0.0432,
+          "sharpness": 157.23,
+          "t_s": 32.413
+        },
+        {
+          "file": "kf_0126.jpg",
+          "frame_index": 1505,
+          "parallax": 0.037,
+          "sharpness": 133.57,
+          "t_s": 32.63
+        },
+        {
+          "file": "kf_0127.jpg",
+          "frame_index": 1515,
+          "parallax": 0.0529,
+          "sharpness": 127.67,
+          "t_s": 32.847
+        },
+        {
+          "file": "kf_0128.jpg",
+          "frame_index": 1525,
+          "parallax": 0.0424,
+          "sharpness": 164.65,
+          "t_s": 33.064
+        },
+        {
+          "file": "kf_0129.jpg",
+          "frame_index": 1540,
+          "parallax": 0.053,
+          "sharpness": 154.39,
+          "t_s": 33.389
+        },
+        {
+          "file": "kf_0130.jpg",
+          "frame_index": 1550,
+          "parallax": 0.0578,
+          "sharpness": 114.3,
+          "t_s": 33.606
+        },
+        {
+          "file": "kf_0131.jpg",
+          "frame_index": 1560,
+          "parallax": 0.0683,
+          "sharpness": 108.87,
+          "t_s": 33.823
+        },
+        {
+          "file": "kf_0132.jpg",
+          "frame_index": 1570,
+          "parallax": 0.0802,
+          "sharpness": 75.17,
+          "t_s": 34.04
+        },
+        {
+          "file": "kf_0133.jpg",
+          "frame_index": 1580,
+          "parallax": 0.1167,
+          "sharpness": 62.06,
+          "t_s": 34.256
+        },
+        {
+          "file": "kf_0134.jpg",
+          "frame_index": 1590,
+          "parallax": 0.1214,
+          "sharpness": 41.69,
+          "t_s": 34.473
+        },
+        {
+          "file": "kf_0135.jpg",
+          "frame_index": 1600,
+          "parallax": 1.0,
+          "sharpness": 13.72,
+          "t_s": 34.69
+        },
+        {
+          "file": "kf_0136.jpg",
+          "frame_index": 1610,
+          "parallax": 1.0,
+          "sharpness": 9.82,
+          "t_s": 34.907
+        },
+        {
+          "file": "kf_0137.jpg",
+          "frame_index": 1620,
+          "parallax": 0.1471,
+          "sharpness": 11.1,
+          "t_s": 35.124
+        },
+        {
+          "file": "kf_0138.jpg",
+          "frame_index": 1630,
+          "parallax": 0.1638,
+          "sharpness": 6.31,
+          "t_s": 35.34
+        },
+        {
+          "file": "kf_0139.jpg",
+          "frame_index": 1645,
+          "parallax": 0.3527,
+          "sharpness": 15.87,
+          "t_s": 35.666
+        },
+        {
+          "file": "kf_0140.jpg",
+          "frame_index": 1655,
+          "parallax": 0.5675,
+          "sharpness": 63.38,
+          "t_s": 35.882
+        },
+        {
+          "file": "kf_0141.jpg",
+          "frame_index": 1665,
+          "parallax": 0.1998,
+          "sharpness": 86.14,
+          "t_s": 36.099
+        },
+        {
+          "file": "kf_0142.jpg",
+          "frame_index": 1675,
+          "parallax": 0.1594,
+          "sharpness": 142.83,
+          "t_s": 36.316
+        },
+        {
+          "file": "kf_0143.jpg",
+          "frame_index": 1685,
+          "parallax": 0.0822,
+          "sharpness": 152.27,
+          "t_s": 36.533
+        },
+        {
+          "file": "kf_0144.jpg",
+          "frame_index": 1700,
+          "parallax": 0.0347,
+          "sharpness": 251.83,
+          "t_s": 36.858
+        }
+      ],
+      "rejected_blur": 14,
+      "rejected_rapid_motion": 12,
+      "relaxed_selection": false,
+      "thinned": 0,
+      "warnings": []
+    },
+    "metric_scale": {
+      "correspondences": 10180,
+      "depth_backend": {
+        "device": "cpu",
+        "license_note": "upstream Depth-Anything-V2 repository: Small models Apache-2.0 (the Base/Large/Giant checkpoints are CC-BY-NC-4.0); the Hugging Face card carries no licence field - verify before redistribution",
+        "max_depth_m": 20.0,
+        "metric": true,
+        "model": "Depth Anything V2 Metric-Indoor-Small",
+        "parameters_m": 24.8,
+        "repo": "depth-anything/Depth-Anything-V2-Metric-Indoor-Small-hf",
+        "revision": "8078d68a9c75a972131914f6afd0c1723be0da7f"
+      },
+      "frame_spread_rel": 0.0703,
+      "frames_tried": 24,
+      "frames_used": 24,
+      "max_frame_scale": 0.23232,
+      "median_scale": 0.20659,
+      "metres_per_sfm_unit": 0.20659,
+      "metric_scale_available": true,
+      "min_frame_scale": 0.15449,
+      "model_floor_rel": 0.1,
+      "reasons": [
+        "median of 24 per-frame scales over 10180 correspondences",
+        "frame-to-frame spread 7%, standard error 1.4%, model floor 10%"
+      ],
+      "scale_quality": "moderate",
+      "sigma_rel": 0.101,
+      "standard_error_rel": 0.0144
+    },
+    "metric_scale_available": true,
+    "pycolmap_version": "4.2.1",
+    "sfm_attempts": [
+      {
+        "camera": {
+          "focal_px": 1073.0149688848394,
+          "focal_source": "estimated by COLMAP (no focal-length metadata prior used)",
+          "height": 960,
+          "model": "SIMPLE_RADIAL",
+          "params": [
+            1073.0149688848394,
+            640.0,
+            480.0,
+            0.01671754931784762
+          ],
+          "width": 1280
+        },
+        "keyframes": 83,
+        "keyframes_attempted": 83,
+        "mean_reprojection_error_px": 0.8121715769126517,
+        "mean_track_length": 4.9743589743589745,
+        "model_sizes": [
+          15,
+          11,
+          10,
+          8
+        ],
+        "models_found": 4,
+        "quality_reasons": [
+          "15/83 keyframes registered (18%)",
+          "234 sparse points",
+          "mean reprojection error 0.81 px",
+          "low registration ratio or sparse structure: trajectory may be fragmentary",
+          "4 disconnected models were found (sizes [15, 11, 10, 8]); only the largest is used"
+        ],
+        "registered_images": 15,
+        "registered_ratio": 0.18072289156626506,
+        "seconds": {
+          "feature_extraction_s": 30.04,
+          "mapping_s": 15.9,
+          "matching_s": 34.06
+        },
+        "sparse_points": 234,
+        "tracking_quality": "weak",
+        "unregistered": [
+          "kf_0000.jpg",
+          "kf_0001.jpg",
+          "kf_0002.jpg",
+          "kf_0003.jpg",
+          "kf_0004.jpg",
+          "kf_0005.jpg",
+          "kf_0006.jpg",
+          "kf_0007.jpg",
+          "kf_0008.jpg",
+          "kf_0009.jpg",
+          "kf_0010.jpg",
+          "kf_0011.jpg",
+          "kf_0012.jpg",
+          "kf_0013.jpg",
+          "kf_0014.jpg",
+          "kf_0015.jpg",
+          "kf_0016.jpg",
+          "kf_0017.jpg",
+          "kf_0018.jpg",
+          "kf_0019.jpg",
+          "kf_0020.jpg",
+          "kf_0021.jpg",
+          "kf_0022.jpg",
+          "kf_0023.jpg",
+          "kf_0024.jpg",
+          "kf_0025.jpg",
+          "kf_0041.jpg",
+          "kf_0042.jpg",
+          "kf_0043.jpg",
+          "kf_0044.jpg",
+          "kf_0045.jpg",
+          "kf_0046.jpg",
+          "kf_0047.jpg",
+          "kf_0048.jpg",
+          "kf_0049.jpg",
+          "kf_0050.jpg",
+          "kf_0051.jpg",
+          "kf_0052.jpg",
+          "kf_0053.jpg",
+          "kf_0054.jpg",
+          "kf_0055.jpg",
+          "kf_0056.jpg",
+          "kf_0057.jpg",
+          "kf_0058.jpg",
+          "kf_0059.jpg",
+          "kf_0060.jpg",
+          "kf_0061.jpg",
+          "kf_0062.jpg",
+          "kf_0063.jpg",
+          "kf_0064.jpg",
+          "kf_0065.jpg",
+          "kf_0066.jpg",
+          "kf_0067.jpg",
+          "kf_0068.jpg",
+          "kf_0069.jpg",
+          "kf_0070.jpg",
+          "kf_0071.jpg",
+          "kf_0072.jpg",
+          "kf_0073.jpg",
+          "kf_0074.jpg",
+          "kf_0075.jpg",
+          "kf_0076.jpg",
+          "kf_0077.jpg",
+          "kf_0078.jpg",
+          "kf_0079.jpg",
+          "kf_0080.jpg",
+          "kf_0081.jpg",
+          "kf_0082.jpg"
+        ],
+        "verified_pairs": 175
+      },
+      {
+        "camera": {
+          "focal_px": 1071.3765242415702,
+          "focal_source": "estimated by COLMAP (no focal-length metadata prior used)",
+          "height": 960,
+          "model": "SIMPLE_RADIAL",
+          "params": [
+            1071.3765242415702,
+            640.0,
+            480.0,
+            0.0662592679132121
+          ],
+          "width": 1280
+        },
+        "denser_retry": true,
+        "keyframes": 145,
+        "keyframes_attempted": 145,
+        "mean_reprojection_error_px": 0.5872096802552087,
+        "mean_track_length": 5.768452982810921,
+        "model_sizes": [
+          24,
+          23,
+          17,
+          16,
+          14,
+          13
+        ],
+        "models_found": 6,
+        "quality_reasons": [
+          "24/145 keyframes registered (17%)",
+          "1978 sparse points",
+          "mean reprojection error 0.59 px",
+          "low registration ratio or sparse structure: trajectory may be fragmentary",
+          "6 disconnected models were found (sizes [24, 23, 17, 16, 14]); only the largest is used"
+        ],
+        "registered_images": 24,
+        "registered_ratio": 0.16551724137931034,
+        "seconds": {
+          "feature_extraction_s": 44.66,
+          "mapping_s": 25.88,
+          "matching_s": 61.21
+        },
+        "sparse_points": 1978,
+        "tracking_quality": "weak",
+        "unregistered": [
+          "kf_0000.jpg",
+          "kf_0001.jpg",
+          "kf_0002.jpg",
+          "kf_0003.jpg",
+          "kf_0004.jpg",
+          "kf_0005.jpg",
+          "kf_0006.jpg",
+          "kf_0007.jpg",
+          "kf_0008.jpg",
+          "kf_0009.jpg",
+          "kf_0010.jpg",
+          "kf_0011.jpg",
+          "kf_0012.jpg",
+          "kf_0013.jpg",
+          "kf_0014.jpg",
+          "kf_0015.jpg",
+          "kf_0016.jpg",
+          "kf_0017.jpg",
+          "kf_0018.jpg",
+          "kf_0019.jpg",
+          "kf_0044.jpg",
+          "kf_0045.jpg",
+          "kf_0046.jpg",
+          "kf_0047.jpg",
+          "kf_0048.jpg",
+          "kf_0049.jpg",
+          "kf_0050.jpg",
+          "kf_0051.jpg",
+          "kf_0052.jpg",
+          "kf_0053.jpg",
+          "kf_0054.jpg",
+          "kf_0055.jpg",
+          "kf_0056.jpg",
+          "kf_0057.jpg",
+          "kf_0058.jpg",
+          "kf_0059.jpg",
+          "kf_0060.jpg",
+          "kf_0061.jpg",
+          "kf_0062.jpg",
+          "kf_0063.jpg",
+          "kf_0064.jpg",
+          "kf_0065.jpg",
+          "kf_0066.jpg",
+          "kf_0067.jpg",
+          "kf_0068.jpg",
+          "kf_0069.jpg",
+          "kf_0070.jpg",
+          "kf_0071.jpg",
+          "kf_0072.jpg",
+          "kf_0073.jpg",
+          "kf_0074.jpg",
+          "kf_0075.jpg",
+          "kf_0076.jpg",
+          "kf_0077.jpg",
+          "kf_0078.jpg",
+          "kf_0079.jpg",
+          "kf_0080.jpg",
+          "kf_0081.jpg",
+          "kf_0082.jpg",
+          "kf_0083.jpg",
+          "kf_0084.jpg",
+          "kf_0085.jpg",
+          "kf_0086.jpg",
+          "kf_0087.jpg",
+          "kf_0088.jpg",
+          "kf_0089.jpg",
+          "kf_0090.jpg",
+          "kf_0091.jpg",
+          "kf_0092.jpg",
+          "kf_0093.jpg",
+          "kf_0094.jpg",
+          "kf_0095.jpg",
+          "kf_0096.jpg",
+          "kf_0097.jpg",
+          "kf_0098.jpg",
+          "kf_0099.jpg",
+          "kf_0100.jpg",
+          "kf_0101.jpg",
+          "kf_0102.jpg",
+          "kf_0103.jpg",
+          "kf_0104.jpg",
+          "kf_0105.jpg",
+          "kf_0106.jpg",
+          "kf_0107.jpg",
+          "kf_0108.jpg",
+          "kf_0109.jpg",
+          "kf_0110.jpg",
+          "kf_0111.jpg",
+          "kf_0112.jpg",
+          "kf_0113.jpg",
+          "kf_0114.jpg",
+          "kf_0115.jpg",
+          "kf_0116.jpg",
+          "kf_0117.jpg",
+          "kf_0118.jpg",
+          "kf_0119.jpg",
+          "kf_0120.jpg",
+          "kf_0121.jpg",
+          "kf_0122.jpg",
+          "kf_0123.jpg",
+          "kf_0124.jpg",
+          "kf_0125.jpg",
+          "kf_0126.jpg",
+          "kf_0127.jpg",
+          "kf_0128.jpg",
+          "kf_0129.jpg",
+          "kf_0130.jpg",
+          "kf_0131.jpg",
+          "kf_0132.jpg",
+          "kf_0133.jpg",
+          "kf_0134.jpg",
+          "kf_0135.jpg",
+          "kf_0136.jpg",
+          "kf_0137.jpg",
+          "kf_0138.jpg",
+          "kf_0139.jpg",
+          "kf_0140.jpg",
+          "kf_0141.jpg",
+          "kf_0142.jpg",
+          "kf_0143.jpg",
+          "kf_0144.jpg"
+        ],
+        "verified_pairs": 355
+      }
+    ],
+    "tracking": {
+      "quality": "weak",
+      "reasons": [
+        "24/145 keyframes registered (17%)",
+        "1978 sparse points",
+        "mean reprojection error 0.59 px",
+        "low registration ratio or sparse structure: trajectory may be fragmentary",
+        "6 disconnected models were found (sizes [24, 23, 17, 16, 14]); only the largest is used"
+      ]
+    },
+    "uncertainty": {
+      "depth_relative_sigma": 0.0254,
+      "interval_k_sigma": 2.0,
+      "metric_scale_relative_sigma": 0.101,
+      "note": "relative 1-sigma on lengths (areas: x2); intervals are +/-k sigma added in quadrature to each stage's own interval. Engineering estimates, not calibrated against ground truth.",
+      "sfm_relative_sigma": 0.0952,
+      "total_relative_sigma": 0.1411
+    },
+    "validation_warnings": [],
+    "video": {
+      "codec": "hevc",
+      "container": "mp4",
+      "duration_s": 37.18333333333333,
+      "fps": 46.122814881219185,
+      "frame_count": 1715,
+      "height": 1440,
+      "path": "C:\\captures\\single_room\\c00a170fe1\\rgb.mp4",
+      "probed_frames": 30,
+      "seek_ok": true,
+      "width": 1920
+    },
+    "world_from_sfm": {
+      "metres_per_sfm_unit": 0.20658860343094645,
+      "note": "x_world = rotation @ (metres_per_sfm_unit * x_sfm) + translation",
+      "rotation": [
+        [
+          0.6971547197471251,
+          0.4354520529444013,
+          -0.5695233149931739
+        ],
+        [
+          -0.4354520529444013,
+          -0.3738766862895708,
+          -0.818900319352506
+        ],
+        [
+          -0.5695233149931739,
+          0.818900319352506,
+          -0.07103140603669589
+        ]
+      ],
+      "translation": [
+        -0.1828566762595551,
+        -0.0,
+        -0.016305235655442958
+      ]
+    }
+  },
+  "warnings": [
+    {
+      "code": "VIDEO_TRACKING_WEAK",
+      "message": "SfM tracking quality is WEAK: 24/145 keyframes registered in the largest connected model; the trajectory covers only part of the walkthrough.",
+      "recoverable": true,
+      "severity": "warning",
+      "stage": "frontend"
+    },
+    {
+      "code": "SFM_DISCONNECTED_MODELS",
+      "message": "SfM produced 6 disconnected models (sizes [24, 23, 17, 16, 14]); only the largest is used, so the rest of the video is not reconstructed.",
+      "recoverable": true,
+      "severity": "warning",
+      "stage": "frontend"
+    },
+    {
+      "code": "INTRINSICS_ESTIMATED",
+      "message": "Camera intrinsics were estimated by COLMAP (SIMPLE_RADIAL, shared by all keyframes); no focal-length metadata was used.",
+      "recoverable": true,
+      "severity": "info",
+      "stage": "frontend"
+    },
+    {
+      "code": "VIDEO_SCALE_ESTIMATED",
+      "message": "Video tier: metres come from a monocular metric-depth model calibrated against SfM; dimensions carry a relative 1-sigma of about 14% (scale 10%, SfM 10%, depth 3%) and are less certain than LiDAR.",
+      "recoverable": true,
+      "severity": "info",
+      "stage": "metric_scale"
+    },
+    {
+      "code": "STRUCTURE_NO_ROOMS",
+      "message": "No closed rooms were recovered; only structural wall segments are reported.",
+      "recoverable": true,
+      "severity": "warning",
+      "stage": "rooms"
+    },
+    {
+      "code": "STRUCTURE_INCOMPLETE_TOPOLOGY",
+      "message": "1 structural walls do not form any closed room.",
+      "recoverable": true,
+      "severity": "warning",
+      "stage": "rooms"
+    },
+    {
+      "code": "OPENINGS_RECALL_UNVERIFIED",
+      "message": "Opening recall has not been verified: openings in walls that were not detected, or in unclosed regions, are not reported.",
+      "recoverable": true,
+      "severity": "info",
+      "stage": "openings"
+    },
+    {
+      "code": "NO_GROUND_TRUTH",
+      "message": "No physical ground truth was supplied: dimensions are not benchmarked, and intervals are diagnostic uncertainty ranges, not calibrated confidence intervals.",
+      "recoverable": true,
+      "severity": "info",
+      "stage": "pipeline"
+    },
+    {
+      "code": "VIDEO_TRACKING_WEAK",
+      "message": "Tracking is weak, so the property is reported as partial.",
+      "recoverable": true,
+      "severity": "warning",
+      "stage": "frontend"
+    },
+    {
+      "code": "GRAVITY_LOW_CONFIDENCE",
+      "message": "Gravity (vertical) confidence is low, so floor/ceiling/wall geometry may be tilted.",
+      "recoverable": true,
+      "severity": "warning",
+      "stage": "gravity"
+    },
+    {
+      "code": "DAMAGE_CANDIDATES_ONLY",
+      "message": "Damage analysis is deterministic image processing (cracks, stains) on RGB evidence: detections are candidates, not verified defects, and no ground truth was available to measure precision or recall.",
+      "recoverable": true,
+      "severity": "info",
+      "stage": "damage"
+    },
+    {
+      "code": "GENERAL_WARNING",
+      "message": "tracking was weak: retried once with denser keyframes",
+      "recoverable": true,
+      "severity": "warning",
+      "stage": "frontend"
+    },
+    {
+      "code": "GENERAL_WARNING",
+      "message": "the denser-keyframe attempt registered more images and was kept",
+      "recoverable": true,
+      "severity": "warning",
+      "stage": "frontend"
+    },
+    {
+      "code": "GENERAL_WARNING",
+      "message": "slab, wall-normal and camera-path axes agree to within 39.5 degrees",
+      "recoverable": true,
+      "severity": "warning",
+      "stage": "gravity"
+    },
+    {
+      "code": "GENERAL_WARNING",
+      "message": "vertical axis differs from the camera-path normal by 39 degrees",
+      "recoverable": true,
+      "severity": "warning",
+      "stage": "gravity"
+    }
+  ]
+}

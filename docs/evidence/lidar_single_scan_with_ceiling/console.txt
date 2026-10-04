@@ -1,0 +1,20 @@
+[1/9] Validate input
+[2/9] Reconstruct metric geometry
+[3/9] Floor and ceiling
+[4/9] Walls
+[5/9] Rooms
+[6/9] Openings
+[7/9] Damage analysis
+[8/9] Render plan
+[9/9] Write results
+Status: PARTIAL   tier: lidar   duration: 177.0 s
+Rooms 3, walls 26 (23 strong/moderate), openings 1 (+1 unverified), ceiling levels 2, rooms with a ceiling height 2
+Damage: 1 detection(s), 0 concealed-risk flag(s), 1 scope item(s)
+Production poses: original
+Warnings (1, plus 10 informational):
+  - [STRUCTURE_INCOMPLETE_TOPOLOGY] Incomplete room topology: 13 of 23 structural walls are not part of any recovered room; unclosed wall regions remain.
+  property.json: 68,804 bytes
+  plan.png: 72,874 bytes
+  run_report.json: 11,112 bytes
+  diagnostics/
+Output folder: C:\results\lidar_single_scan_with_ceiling

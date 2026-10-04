@@ -1,0 +1,34 @@
+[1/13] Validate input
+[2/13] Select keyframes
+[3/13] Structure-from-motion
+[4/13] Metric scale (depth model)
+[5/13] Fuse depth
+[6/13] Gravity alignment
+[7/13] Floor and ceiling
+[8/13] Walls
+[9/13] Rooms
+[10/13] Openings
+[11/13] Damage analysis
+[12/13] Render plan
+[13/13] Write results
+Status: PARTIAL   tier: video (auto-detected: rgb.mp4 is a video file (.mp4))   duration: 414.3 s
+Rooms 0, walls 1 (1 strong/moderate), openings 0 (+0 unverified), ceiling levels 0, rooms with a ceiling height 0
+Damage: 1 detection(s), 0 concealed-risk flag(s), 1 scope item(s)
+Production poses: sfm_scaled
+Tracking: weak   metric scale available: True (moderate, 0.20659 m per SfM unit)
+Warnings (10, plus 5 informational):
+  - [VIDEO_TRACKING_WEAK] SfM tracking quality is WEAK: 24/145 keyframes registered in the largest connected model; the trajectory covers only part of the walkthrough.
+  - [SFM_DISCONNECTED_MODELS] SfM produced 6 disconnected models (sizes [24, 23, 17, 16, 14]); only the largest is used, so the rest of the video is not reconstructed.
+  - [STRUCTURE_NO_ROOMS] No closed rooms were recovered; only structural wall segments are reported.
+  - [STRUCTURE_INCOMPLETE_TOPOLOGY] 1 structural walls do not form any closed room.
+  - [VIDEO_TRACKING_WEAK] Tracking is weak, so the property is reported as partial.
+  - [GRAVITY_LOW_CONFIDENCE] Gravity (vertical) confidence is low, so floor/ceiling/wall geometry may be tilted.
+  - [GENERAL_WARNING] tracking was weak: retried once with denser keyframes
+  - [GENERAL_WARNING] the denser-keyframe attempt registered more images and was kept
+  - [GENERAL_WARNING] slab, wall-normal and camera-path axes agree to within 39.5 degrees
+  - [GENERAL_WARNING] vertical axis differs from the camera-path normal by 39 degrees
+  property.json: 19,876 bytes
+  plan.png: 26,866 bytes
+  run_report.json: 51,277 bytes
+  diagnostics/
+Output folder: C:\results\video_single_room_rgb

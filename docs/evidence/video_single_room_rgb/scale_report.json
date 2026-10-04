@@ -1,0 +1,223 @@
+{
+  "correspondences": 10180,
+  "depth_backend": {
+    "device": "cpu",
+    "license_note": "upstream Depth-Anything-V2 repository: Small models Apache-2.0 (the Base/Large/Giant checkpoints are CC-BY-NC-4.0); the Hugging Face card carries no licence field - verify before redistribution",
+    "max_depth_m": 20.0,
+    "metric": true,
+    "model": "Depth Anything V2 Metric-Indoor-Small",
+    "parameters_m": 24.8,
+    "repo": "depth-anything/Depth-Anything-V2-Metric-Indoor-Small-hf",
+    "revision": "8078d68a9c75a972131914f6afd0c1723be0da7f"
+  },
+  "frame_spread_rel": 0.0703,
+  "frames_tried": 24,
+  "frames_used": 24,
+  "max_frame_scale": 0.23232,
+  "median_scale": 0.20659,
+  "metres_per_sfm_unit": 0.20659,
+  "metric_scale_available": true,
+  "min_frame_scale": 0.15449,
+  "model_floor_rel": 0.1,
+  "per_frame": [
+    {
+      "correspondences": 50,
+      "name": "kf_0020.jpg",
+      "reason": null,
+      "scale": 0.2119,
+      "spread_rel": 0.0985,
+      "used": 48
+    },
+    {
+      "correspondences": 93,
+      "name": "kf_0021.jpg",
+      "reason": null,
+      "scale": 0.2132,
+      "spread_rel": 0.1342,
+      "used": 93
+    },
+    {
+      "correspondences": 125,
+      "name": "kf_0022.jpg",
+      "reason": null,
+      "scale": 0.2107,
+      "spread_rel": 0.0982,
+      "used": 125
+    },
+    {
+      "correspondences": 156,
+      "name": "kf_0023.jpg",
+      "reason": null,
+      "scale": 0.2278,
+      "spread_rel": 0.0664,
+      "used": 134
+    },
+    {
+      "correspondences": 166,
+      "name": "kf_0024.jpg",
+      "reason": null,
+      "scale": 0.2323,
+      "spread_rel": 0.0403,
+      "used": 143
+    },
+    {
+      "correspondences": 166,
+      "name": "kf_0025.jpg",
+      "reason": null,
+      "scale": 0.1825,
+      "spread_rel": 0.0333,
+      "used": 158
+    },
+    {
+      "correspondences": 209,
+      "name": "kf_0026.jpg",
+      "reason": null,
+      "scale": 0.1545,
+      "spread_rel": 0.0364,
+      "used": 206
+    },
+    {
+      "correspondences": 359,
+      "name": "kf_0027.jpg",
+      "reason": null,
+      "scale": 0.1933,
+      "spread_rel": 0.027,
+      "used": 331
+    },
+    {
+      "correspondences": 384,
+      "name": "kf_0028.jpg",
+      "reason": null,
+      "scale": 0.1999,
+      "spread_rel": 0.0155,
+      "used": 367
+    },
+    {
+      "correspondences": 490,
+      "name": "kf_0029.jpg",
+      "reason": null,
+      "scale": 0.1959,
+      "spread_rel": 0.0184,
+      "used": 470
+    },
+    {
+      "correspondences": 560,
+      "name": "kf_0030.jpg",
+      "reason": null,
+      "scale": 0.2106,
+      "spread_rel": 0.0121,
+      "used": 536
+    },
+    {
+      "correspondences": 685,
+      "name": "kf_0031.jpg",
+      "reason": null,
+      "scale": 0.2057,
+      "spread_rel": 0.0314,
+      "used": 643
+    },
+    {
+      "correspondences": 804,
+      "name": "kf_0032.jpg",
+      "reason": null,
+      "scale": 0.2164,
+      "spread_rel": 0.0093,
+      "used": 564
+    },
+    {
+      "correspondences": 688,
+      "name": "kf_0033.jpg",
+      "reason": null,
+      "scale": 0.2045,
+      "spread_rel": 0.0078,
+      "used": 594
+    },
+    {
+      "correspondences": 679,
+      "name": "kf_0034.jpg",
+      "reason": null,
+      "scale": 0.2075,
+      "spread_rel": 0.0102,
+      "used": 620
+    },
+    {
+      "correspondences": 758,
+      "name": "kf_0035.jpg",
+      "reason": null,
+      "scale": 0.1931,
+      "spread_rel": 0.0105,
+      "used": 682
+    },
+    {
+      "correspondences": 738,
+      "name": "kf_0036.jpg",
+      "reason": null,
+      "scale": 0.2021,
+      "spread_rel": 0.0103,
+      "used": 623
+    },
+    {
+      "correspondences": 797,
+      "name": "kf_0037.jpg",
+      "reason": null,
+      "scale": 0.2184,
+      "spread_rel": 0.0089,
+      "used": 680
+    },
+    {
+      "correspondences": 767,
+      "name": "kf_0038.jpg",
+      "reason": null,
+      "scale": 0.226,
+      "spread_rel": 0.0074,
+      "used": 682
+    },
+    {
+      "correspondences": 718,
+      "name": "kf_0039.jpg",
+      "reason": null,
+      "scale": 0.216,
+      "spread_rel": 0.017,
+      "used": 663
+    },
+    {
+      "correspondences": 705,
+      "name": "kf_0040.jpg",
+      "reason": null,
+      "scale": 0.2169,
+      "spread_rel": 0.0248,
+      "used": 655
+    },
+    {
+      "correspondences": 684,
+      "name": "kf_0041.jpg",
+      "reason": null,
+      "scale": 0.2035,
+      "spread_rel": 0.0235,
+      "used": 616
+    },
+    {
+      "correspondences": 497,
+      "name": "kf_0042.jpg",
+      "reason": null,
+      "scale": 0.1871,
+      "spread_rel": 0.0194,
+      "used": 436
+    },
+    {
+      "correspondences": 132,
+      "name": "kf_0043.jpg",
+      "reason": null,
+      "scale": 0.1632,
+      "spread_rel": 0.027,
+      "used": 111
+    }
+  ],
+  "reasons": [
+    "median of 24 per-frame scales over 10180 correspondences",
+    "frame-to-frame spread 7%, standard error 1.4%, model floor 10%"
+  ],
+  "scale_quality": "moderate",
+  "sigma_rel": 0.101,
+  "standard_error_rel": 0.0144
+}

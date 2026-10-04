@@ -518,7 +518,7 @@ def test_path_redaction():
     home = str(Path.home())
     assert redact_text(home + "\\data\\cap") == "~\\data\\cap" and redact_text(home.replace("\\", "/") + "/x") == "~/x"
     assert redact_text(home.upper() + "\\x") == "~\\x"  # Windows paths are case-insensitive
-    assert redact_text("C:\\spatialforge-data\\single_room") == "C:\\spatialforge-data\\single_room"  # not personal: unchanged
+    assert redact_text("C:\\captures\\single_room") == "C:\\captures\\single_room"  # not personal: unchanged
     assert scrub({"a": [home + "\\x", {"b": home}], "n": 3}) == {"a": ["~\\x", {"b": "~"}], "n": 3}
 
 

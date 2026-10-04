@@ -1,0 +1,338 @@
+{
+  "config": {
+    "damage": true,
+    "debug": false,
+    "diagnostics": false,
+    "tier": "lidar"
+  },
+  "counts": {
+    "ceiling_levels": 0,
+    "concealed_damage_flags": 0,
+    "damage_regions": 3,
+    "openings": 0,
+    "rooms": 1,
+    "rooms_with_ceiling": 0,
+    "scope_line_items": 3,
+    "unverified_openings": 0,
+    "walls": 9,
+    "walls_strong_or_moderate": 7
+  },
+  "determinism": {
+    "deterministic": "LiDAR reconstruction, drift stage, planes, walls, rooms, openings, scale estimation, gravity, fusion, stitching, damage analysis, serialization and rendering are deterministic for identical inputs.",
+    "excluded_from_comparison": [
+      "timing",
+      "run_report.json timestamps and durations"
+    ],
+    "not_bit_reproducible": [
+      "PyCOLMAP structure-from-motion (video and photo tiers) is multi-threaded: registered image sets and poses can differ slightly between runs, and so can everything built on them.",
+      "Video seeking can land a few frames apart across decoder versions."
+    ]
+  },
+  "diagnostic_warnings": [],
+  "ended_at": "2026-10-04T05:22:41+00:00",
+  "errors": [],
+  "exit_code": 0,
+  "fallback_decisions": [
+    {
+      "decision": "used corrected poses",
+      "reason": "metrics supported the correction",
+      "stage": "pose_refinement"
+    }
+  ],
+  "input": {
+    "name": "single_room",
+    "path": "C:\\captures\\single_room"
+  },
+  "output": {
+    "directory": "C:\\results\\lidar_single_room",
+    "files": [
+      "diagnostics/",
+      "plan.png",
+      "property.json",
+      "run_report.json"
+    ],
+    "incomplete": false
+  },
+  "plan": {
+    "openings_drawn": 0,
+    "rooms_drawn": 1,
+    "walls_drawn": 7
+  },
+  "production_pose_source": "corrected",
+  "report_version": 1,
+  "schema": "spatialforge.run_report",
+  "spatialforge_version": "0.1.0",
+  "stages": [
+    {
+      "duration_seconds": 0.158,
+      "error": null,
+      "stage": "validation",
+      "status": "ok",
+      "substages": [
+        "capture_validation"
+      ],
+      "warnings": []
+    },
+    {
+      "duration_seconds": 45.238,
+      "error": null,
+      "stage": "frontend",
+      "status": "ok",
+      "substages": [
+        "metric_reconstruction_and_pose_check"
+      ],
+      "warnings": []
+    },
+    {
+      "duration_seconds": 0.0,
+      "error": null,
+      "stage": "metric_scale",
+      "status": "skipped",
+      "substages": [],
+      "warnings": []
+    },
+    {
+      "duration_seconds": 2.352,
+      "error": null,
+      "stage": "geometry",
+      "status": "ok",
+      "substages": [
+        "floor_and_ceiling_planes"
+      ],
+      "warnings": []
+    },
+    {
+      "duration_seconds": 0.0,
+      "error": null,
+      "stage": "gravity",
+      "status": "skipped",
+      "substages": [],
+      "warnings": []
+    },
+    {
+      "duration_seconds": 1.139,
+      "error": null,
+      "stage": "structure",
+      "status": "ok",
+      "substages": [
+        "structural_walls"
+      ],
+      "warnings": []
+    },
+    {
+      "duration_seconds": 0.015,
+      "error": null,
+      "stage": "rooms",
+      "status": "ok",
+      "substages": [
+        "room_topology"
+      ],
+      "warnings": []
+    },
+    {
+      "duration_seconds": 11.233,
+      "error": null,
+      "stage": "openings",
+      "status": "ok",
+      "substages": [
+        "openings"
+      ],
+      "warnings": []
+    },
+    {
+      "duration_seconds": 0.0,
+      "error": null,
+      "stage": "stitching",
+      "status": "skipped",
+      "substages": [],
+      "warnings": []
+    },
+    {
+      "duration_seconds": 27.721,
+      "error": null,
+      "stage": "damage",
+      "status": "warning",
+      "substages": [
+        "damage_analysis"
+      ],
+      "warnings": [
+        {
+          "code": "DAMAGE_NO_METRIC_EXTENT",
+          "message": "1 of 3 damage detections have no reliable metric extent (see each detection's warnings); they are kept without width, height or area.",
+          "recoverable": true,
+          "severity": "info",
+          "stage": "damage"
+        }
+      ]
+    },
+    {
+      "duration_seconds": 0.465,
+      "error": null,
+      "stage": "rendering",
+      "status": "ok",
+      "substages": [
+        "rendering"
+      ],
+      "warnings": []
+    },
+    {
+      "duration_seconds": 0.73,
+      "error": null,
+      "stage": "serialization",
+      "status": "ok",
+      "substages": [
+        "serialization"
+      ],
+      "warnings": []
+    }
+  ],
+  "started_at": "2026-10-04T05:21:08+00:00",
+  "status": "partial",
+  "substages": [
+    {
+      "details": {
+        "depth_frames": 1715,
+        "pose_rows": 1715,
+        "status": "VALID"
+      },
+      "duration_seconds": 0.158,
+      "name": "capture_validation",
+      "stage": "validation",
+      "status": "ok"
+    },
+    {
+      "details": {
+        "frames_used": 400,
+        "points": 454171,
+        "pose_source": "corrected"
+      },
+      "duration_seconds": 45.238,
+      "name": "metric_reconstruction_and_pose_check",
+      "stage": "frontend",
+      "status": "ok"
+    },
+    {
+      "details": {},
+      "duration_seconds": 2.352,
+      "name": "floor_and_ceiling_planes",
+      "stage": "geometry",
+      "status": "ok"
+    },
+    {
+      "details": {
+        "rejected_candidates": 20,
+        "walls": 9
+      },
+      "duration_seconds": 1.139,
+      "name": "structural_walls",
+      "stage": "structure",
+      "status": "ok"
+    },
+    {
+      "details": {
+        "candidate_faces": 1,
+        "rejected_faces": 0,
+        "rooms": 1
+      },
+      "duration_seconds": 0.015,
+      "name": "room_topology",
+      "stage": "rooms",
+      "status": "ok"
+    },
+    {
+      "details": {
+        "accepted": 0,
+        "candidates": 1,
+        "frame_subsets": 3,
+        "low_confidence": 0,
+        "rejected": 1
+      },
+      "duration_seconds": 11.233,
+      "name": "openings",
+      "stage": "openings",
+      "status": "ok"
+    },
+    {
+      "details": {
+        "concealed_flags": 0,
+        "detections": 3,
+        "images": 24,
+        "scope_items": 3,
+        "with_metric_extent": 2
+      },
+      "duration_seconds": 27.721,
+      "name": "damage_analysis",
+      "stage": "damage",
+      "status": "warning"
+    },
+    {
+      "details": {},
+      "duration_seconds": 0.465,
+      "name": "rendering",
+      "stage": "rendering",
+      "status": "ok"
+    },
+    {
+      "details": {},
+      "duration_seconds": 0.73,
+      "name": "serialization",
+      "stage": "serialization",
+      "status": "ok"
+    }
+  ],
+  "tier": "lidar",
+  "tier_detection": null,
+  "tier_requested": "lidar",
+  "total_duration_seconds": 92.423,
+  "warnings": [
+    {
+      "code": "STRUCTURE_INCOMPLETE_TOPOLOGY",
+      "message": "Incomplete room topology: 3 of 7 structural walls are not part of any recovered room; unclosed wall regions remain.",
+      "recoverable": true,
+      "severity": "warning",
+      "stage": "rooms"
+    },
+    {
+      "code": "STRUCTURE_CEILING_NOT_OBSERVED",
+      "message": "Ceiling height was not observed for 1 of 1 rooms.",
+      "recoverable": true,
+      "severity": "info",
+      "stage": "geometry"
+    },
+    {
+      "code": "OPENINGS_RECALL_UNVERIFIED",
+      "message": "Opening recall has not been verified: openings in walls that were not detected, or in unclosed regions, are not reported.",
+      "recoverable": true,
+      "severity": "info",
+      "stage": "openings"
+    },
+    {
+      "code": "NO_GROUND_TRUTH",
+      "message": "No physical ground truth was supplied: dimensions are not benchmarked, and intervals are diagnostic uncertainty ranges, not calibrated confidence intervals.",
+      "recoverable": true,
+      "severity": "info",
+      "stage": "pipeline"
+    },
+    {
+      "code": "DAMAGE_CANDIDATES_ONLY",
+      "message": "Damage analysis is deterministic image processing (cracks, stains) on RGB evidence: detections are candidates, not verified defects, and no ground truth was available to measure precision or recall.",
+      "recoverable": true,
+      "severity": "info",
+      "stage": "damage"
+    },
+    {
+      "code": "DAMAGE_NO_METRIC_EXTENT",
+      "message": "damage: 1 of 3 damage detections have no reliable metric extent (see each detection's warnings); they are kept without width, height or area.",
+      "recoverable": true,
+      "severity": "info",
+      "stage": "damage"
+    },
+    {
+      "code": "DAMAGE_NO_METRIC_EXTENT",
+      "message": "1 of 3 damage detections have no reliable metric extent (see each detection's warnings); they are kept without width, height or area.",
+      "recoverable": true,
+      "severity": "info",
+      "stage": "damage"
+    }
+  ]
+}

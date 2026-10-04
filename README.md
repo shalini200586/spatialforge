@@ -1,7 +1,8 @@
 # SpatialForge
 
-Turns a capture of a property into a dimensioned floor plan, a machine-readable property description and damage findings.
-Three input tiers share one pipeline, one output contract and one status model:
+SpatialForge turns one capture of a property (LiDAR, a walkthrough video, or room photos) into a dimensioned floor plan, a
+machine-readable property description and visible-damage findings, with a single command. Three input tiers share one pipeline,
+one output contract and one status model:
 
 | Tier | Input | Command |
 |---|---|---|
@@ -9,15 +10,27 @@ Three input tiers share one pipeline, one output contract and one status model:
 | Video | one walkthrough video file | `--tier video` |
 | Photos | a folder of room folders with still photos | `--tier photos` |
 
+## Quick start
+
+    powershell -ExecutionPolicy Bypass -File scripts\setup.ps1 -Video -Damage -Test   # venv + install (or: pip install -e .[test,video])
+    python scripts/download_models.py                                               # video and photos only, once
+    python -m spatialforge doctor                                                   # which tiers are READY on this machine
+    python -m spatialforge process C:\captures\single_room --tier lidar --output C:\results\room
+
+Open `C:\results\room\plan.png` and `property.json`. Nothing is downloaded by `process`; results are PARTIAL by design when the
+capture does not support more (see Outputs and Known limitations).
+
 ## Installation
 
-Python 3.11, CPU only, no GPU or compiler needed.
+Python 3.11, CPU only, no GPU or compiler needed. `scripts\setup.ps1` creates a local `.venv` and installs into it (it never
+touches the global Python); or install by hand:
 
     pip install -e .[test]            # LiDAR tier
     pip install -e .[test,video]      # plus the video and photo tiers (PyCOLMAP, PyTorch CPU, transformers, OpenCV)
     pip install -e .[damage]          # OpenCV only: the damage analysis for the LiDAR tier
 
     python -m spatialforge --version  # spatialforge 0.1.0
+    python -m spatialforge doctor     # dependencies, model weights, write access, READY / NOT READY per tier
 
 ## Model setup (video and photos only)
 
@@ -31,9 +44,9 @@ immediately with `ERROR [MODEL_WEIGHTS_MISSING]` and prints this same command. T
 
 ## Usage
 
-    python -m spatialforge process "C:\capture\single_room"          --tier lidar  --output "C:\result\room"
-    python -m spatialforge process "C:\capture\walkthrough.mp4"      --tier video  --output "C:\result\walk"
-    python -m spatialforge process "C:\capture\property_photos"      --tier photos --output "C:\result\photos"
+    python -m spatialforge process "C:\captures\single_room"          --tier lidar  --output "C:\results\room"
+    python -m spatialforge process "C:\captures\walkthrough.mp4"      --tier video  --output "C:\results\walk"
+    python -m spatialforge process "C:\captures\property_photos"      --tier photos --output "C:\results\photos"
 
 `--tier auto` detects the tier from the input (a folder with `odometry.csv` + `depth/` is LiDAR, a video file is video, a
 folder of image sub-folders is photos). It decides only when the input is unambiguous; otherwise it fails and asks for an
@@ -135,6 +148,40 @@ Rooms (id, area, length x width or "irregular", ceiling height), structural wall
 openings with their widths, on a metric-scaled white background. Policies: weak walls are not drawn; walls outside
 any recovered room are dashed grey; unverified wall gaps are dotted; low-confidence openings are left out of the
 plan and listed under `unverified_openings`; a PARTIAL badge and note are always shown for partial results.
+
+## Capture protocol
+
+How to capture each tier (photos, video, LiDAR), the hand-off folder and what to avoid: [docs/capture_protocol.md](docs/capture_protocol.md).
+Supported hardware and the accuracy status per tier: [docs/device_matrix.md](docs/device_matrix.md).
+
+## Benchmark and reproduction
+
+**Real benchmark status: NOT YET MEASURED.** The evaluation harness, the assignment gates, the repeatability and incumbent
+comparison and the fix-loop tooling are built and tested, but no tape/laser ground truth, real photo set, real walkthrough video,
+repeat capture or consumer-app export exists yet, so no accuracy gate is claimed. What exists is internal sample evidence on three
+LiDAR captures (execution, determinism, drift ablation, runtimes): [docs/internal_sample_report.md](docs/internal_sample_report.md),
+[docs/evidence/](docs/evidence/README.md).
+
+    python -m spatialforge evaluate --property C:\results\room --ground-truth C:\benchmark\room\ground_truth.json --output C:\results\room\evaluation
+    python -m spatialforge compare-incumbent --csv C:\benchmark\incumbent.csv
+    powershell -File scripts\reproduce.ps1 -LidarCapture C:\captures\room -GroundTruth C:\benchmark\room\ground_truth.json -OutputDir C:\results\repro
+    powershell -File scripts\smoke_test.ps1            # fast check (-Full: the whole test suite; -Sample <capture>: also run process)
+    python scripts/build_submission.py --zip            # dist\spatialforge_submission
+
+Gate results are PASS, FAIL or NOT EVALUATED; a gate with no ground truth is never a pass. Ground-truth format, metrics and gates:
+[benchmark/README.md](benchmark/README.md). Fix loop: [docs/fix_loop.md](docs/fix_loop.md) (**pending real benchmark**).
+
+## Documentation
+
+| | |
+|---|---|
+| [docs/compliance_matrix.md](docs/compliance_matrix.md) | every assignment requirement with status and evidence |
+| [docs/submission_status.md](docs/submission_status.md) | what is ready, what is not validated, what needs external data |
+| [docs/technical_report.md](docs/technical_report.md) | architecture, uncertainty, damage layer, calibration, failure modes |
+| [docs/benchmark_report.md](docs/benchmark_report.md) | benchmark report (real sections NOT YET MEASURED) |
+| [docs/drift_ablation.md](docs/drift_ablation.md) | LiDAR pose-correction ablation on the three samples |
+| [docs/demo_checklist.md](docs/demo_checklist.md) | live-defence sequence |
+| [THIRD_PARTY.md](THIRD_PARTY.md) | dependencies, model, licenses to verify |
 
 ## Tier details
 
@@ -350,7 +397,7 @@ sub-folder is used automatically.
 
 ## Reconstruct a metric point cloud
 
-    python -m spatialforge reconstruct-lidar "C:\spatialforge-data\single_room" --output "C:\temp\single_room.ply"
+    python -m spatialforge reconstruct-lidar "C:\captures\single_room" --output "C:\results\single_room.ply"
 
 Writes an ASCII XYZ-only PLY (metres, in the capture's native world frame) and prints diagnostics:
 frames used, point counts at each filtering step, camera-path and cloud extents, and a plausibility check.
@@ -375,7 +422,7 @@ Options: `--frame-step 30` (every Nth frame), `--max-frames 60` (evenly spaced c
 
 ## Drift correction ablation
 
-    python -m spatialforge correct-lidar-drift "C:\spatialforge-data\single_scan_floor_only" --output-dir "C:\temp\drift_floor_only"
+    python -m spatialforge correct-lidar-drift "C:\captures\single_scan_floor_only" --output-dir "C:\results\drift_floor_only"
 
 The supplied odometry is not simply trusted: the command registers the depth clouds of sampled frames,
 optimises a pose graph, and compares a baseline reconstruction (OFF, supplied poses) with a corrected one
@@ -404,7 +451,7 @@ capture were too far apart for ICP to register most pairs). Structural extractio
 
 ## Floor and ceiling planes
 
-    python -m spatialforge analyze-horizontal-planes "C:\spatialforge-data\single_scan_with_ceiling" --output-dir "C:\temp\planes_with_ceiling"
+    python -m spatialforge analyze-horizontal-planes "C:\captures\single_scan_with_ceiling" --output-dir "C:\results\planes_with_ceiling"
 
 Detects the structural floor and ceiling(s) and measures ceiling height. It runs on the production cloud:
 the drift stage (above) decides per capture whether corrected or original poses are used, and the report
@@ -431,7 +478,7 @@ Walls, rooms, openings and floor area are not implemented yet.
 
 ## Structural walls
 
-    python -m spatialforge analyze-walls "C:\spatialforge-data\single_room" --output-dir "C:\temp\walls_room"
+    python -m spatialforge analyze-walls "C:\captures\single_room" --output-dir "C:\results\walls_room"
 
 Extracts vertical structural walls as metric top-down (X-Z) segments, on the production cloud (corrected or
 original poses as decided by the drift stage) and using the floor/ceiling planes from the horizontal-plane stage.
@@ -463,7 +510,7 @@ centimetres; some parallel duplicates, off-axis lines and furniture planes remai
 
 ## Room topology
 
-    python -m spatialforge analyze-rooms "C:\spatialforge-data\single_room" --output-dir "C:\temp\rooms_room"
+    python -m spatialforge analyze-rooms "C:\captures\single_room" --output-dir "C:\results\rooms_room"
 
 Turns the structural wall candidates into connected room geometry (metric X-Z, polygons counter-clockwise).
 It consumes the wall stage's output (snapped orientations, evidence tiers, uncertainties, observed segments and
@@ -497,7 +544,7 @@ centimetres; thresholds were calibrated on three captures; no openings, labels o
 
 ## Structural openings
 
-    python -m spatialforge analyze-openings "C:\spatialforge-data\single_room" --output-dir "C:\temp\openings_room"
+    python -m spatialforge analyze-openings "C:\captures\single_room" --output-dir "C:\results\openings_room"
 
 Verifies the wall gaps preserved by the wall stage using local 3D evidence and measures the openings. It works on
 structural walls, so openings are found even where no complete room polygon exists.
@@ -531,4 +578,5 @@ openings in walls the wall stage missed cannot be found; no ground truth was ava
 
 ## Tests
 
-    python -m pytest
+    python -m pytest -q                              # the whole suite (several minutes on a laptop CPU)
+    powershell -File scripts\smoke_test.ps1          # a fast subset plus --version and doctor

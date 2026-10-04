@@ -1,0 +1,51 @@
+{
+  "schema": "spatialforge-ground-truth/1",
+  "property_id": "EXAMPLE-NOT-A-REAL-PROPERTY",
+  "physical_measurement": false,
+  "measured_with": "none: placeholder values showing the format",
+  "measurement_uncertainty_m": 0.002,
+  "notes": "Replace every value with tape/laser measurements of the real benchmark property. Delete keys you did not measure.",
+  "repeat_group": "example_room",
+  "capture_id": "A",
+  "footprint_area_m2": 41.0,
+  "rooms": [
+    {
+      "id": "living_room",
+      "predicted_id": null,
+      "floor_area_m2": 20.0,
+      "ceiling_height_m": 2.45,
+      "walls": [
+        {"id": "north", "length_m": 5.00},
+        {"id": "east", "length_m": 4.00},
+        {"id": "south", "length_m": 5.00},
+        {"id": "west", "length_m": 4.00}
+      ]
+    },
+    {
+      "id": "bedroom",
+      "floor_area_m2": 12.0,
+      "ceiling_height_m": 2.45,
+      "walls": [
+        {"id": "north", "length_m": 4.00},
+        {"id": "east", "length_m": 3.00},
+        {"id": "south", "length_m": 4.00},
+        {"id": "west", "length_m": 3.00}
+      ]
+    },
+    {
+      "id": "hallway",
+      "floor_area_m2": 9.0,
+      "ceiling_height_m": 2.45
+    }
+  ],
+  "openings": [
+    {"id": "door_living_hall", "type": "door", "width_m": 0.90, "room_id": "living_room", "connects": ["living_room", "hallway"]},
+    {"id": "door_bed_hall", "type": "door", "width_m": 0.80, "room_id": "bedroom", "connects": ["bedroom", "hallway"]},
+    {"id": "window_living", "type": "window", "width_m": 1.40, "room_id": "living_room"}
+  ],
+  "adjacency": [["living_room", "hallway"], ["bedroom", "hallway"]],
+  "damage": [
+    {"id": "crack_1", "class": "crack", "room_id": "living_room", "length_m": 0.60},
+    {"id": "stain_1", "class": "stain", "room_id": "bedroom", "area_m2": 0.12}
+  ]
+}

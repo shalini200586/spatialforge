@@ -1,0 +1,20 @@
+{
+  "_comment": "Assignment gate thresholds. This is the ONE place they live; evaluate reads it (or the defaults in spatialforge.evaluation.models.GateConfig, which are the same numbers). null means: no threshold was supplied, so the metric is reported but the gate is NOT EVALUATED.",
+  "opening_width_abs_m": 0.02,
+  "opening_width_min_fraction": 0.85,
+  "ceiling_abs_m": 0.015,
+  "repeat_ceiling_spread_m": 0.01,
+  "repeat_wall_abs_m": 0.01,
+  "repeat_wall_pct": 0.5,
+  "photo_wall_pct": 8.0,
+  "video_wall_pct": 3.0,
+  "photo_footprint_pct": 8.0,
+  "wall_aggregate": "mean",
+  "opening_detection_min_recall": null,
+  "opening_detection_max_phantoms": null,
+  "confidence_min_coverage": null,
+  "area_match_tolerance": 0.25,
+  "wall_match_tolerance": 0.25,
+  "opening_match_max_width_diff_m": 0.5,
+  "tie_tolerance_m": 0.005
+}

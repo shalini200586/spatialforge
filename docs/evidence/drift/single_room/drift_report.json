@@ -1,0 +1,365 @@
+{
+  "accepted": true,
+  "after": {
+    "floor_band_thickness_m": 0.13049,
+    "floor_peak_share": 0.17395,
+    "floor_y_m": -1.46685,
+    "footprint_x_m": 9.4052,
+    "footprint_z_m": 6.98148,
+    "neighbour_inlier_fraction": 0.99396,
+    "neighbour_residual_median_m": 0.01393,
+    "overlap": 0.65117,
+    "points": 454171,
+    "wall_slab_cells": 3619,
+    "wall_slab_cells_per_1000_points": 14.17426,
+    "wall_slab_points": 255322
+  },
+  "before": {
+    "floor_band_thickness_m": 0.12898,
+    "floor_peak_share": 0.16742,
+    "floor_y_m": -1.47024,
+    "footprint_x_m": 9.36317,
+    "footprint_z_m": 6.97906,
+    "neighbour_inlier_fraction": 0.99395,
+    "neighbour_residual_median_m": 0.01394,
+    "overlap": 0.64713,
+    "points": 464290,
+    "wall_slab_cells": 3649,
+    "wall_slab_cells_per_1000_points": 14.0101,
+    "wall_slab_points": 260455
+  },
+  "capture": "single_room",
+  "capture_path": "C:\\captures\\single_room\\c00a170fe1",
+  "constraint_residual_before_after": {
+    "loop": {
+      "after_mean_translation_m_and_rotation_deg": [
+        0.01976,
+        0.44952
+      ],
+      "before_mean_translation_m_and_rotation_deg": [
+        0.0524,
+        0.9603
+      ]
+    },
+    "sequential": {
+      "after_mean_translation_m_and_rotation_deg": [
+        0.01007,
+        0.25657
+      ],
+      "before_mean_translation_m_and_rotation_deg": [
+        0.01015,
+        0.26004
+      ]
+    }
+  },
+  "fallback_reason": null,
+  "frames_available": 1715,
+  "frames_used": 400,
+  "loop_closures": {
+    "accepted": 6,
+    "candidates": 20,
+    "edges": [
+      {
+        "accepted": false,
+        "fitness": 0.56818,
+        "inlier_rmse": 0.03246,
+        "kind": "loop",
+        "reason": "fitness 0.57 < 0.6",
+        "rotation_correction_deg": 1.65959,
+        "source": 1314,
+        "target": 1379,
+        "translation_correction_m": 0.04689
+      },
+      {
+        "accepted": false,
+        "fitness": 0.56195,
+        "inlier_rmse": 0.03256,
+        "kind": "loop",
+        "reason": "fitness 0.56 < 0.6",
+        "rotation_correction_deg": 1.1855,
+        "source": 1310,
+        "target": 1379,
+        "translation_correction_m": 0.01306
+      },
+      {
+        "accepted": true,
+        "fitness": 0.70859,
+        "inlier_rmse": 0.03405,
+        "kind": "loop",
+        "reason": "ok",
+        "rotation_correction_deg": 1.46682,
+        "source": 954,
+        "target": 1018,
+        "translation_correction_m": 0.05757
+      },
+      {
+        "accepted": false,
+        "fitness": 0.38403,
+        "inlier_rmse": 0.03127,
+        "kind": "loop",
+        "reason": "fitness 0.38 < 0.6",
+        "rotation_correction_deg": 2.01996,
+        "source": 1319,
+        "target": 1383,
+        "translation_correction_m": 0.04353
+      },
+      {
+        "accepted": true,
+        "fitness": 0.73346,
+        "inlier_rmse": 0.02952,
+        "kind": "loop",
+        "reason": "ok",
+        "rotation_correction_deg": 1.65889,
+        "source": 949,
+        "target": 1014,
+        "translation_correction_m": 0.0866
+      },
+      {
+        "accepted": true,
+        "fitness": 0.60874,
+        "inlier_rmse": 0.03321,
+        "kind": "loop",
+        "reason": "ok",
+        "rotation_correction_deg": 1.12293,
+        "source": 958,
+        "target": 1022,
+        "translation_correction_m": 0.02746
+      },
+      {
+        "accepted": false,
+        "fitness": 0.53621,
+        "inlier_rmse": 0.03365,
+        "kind": "loop",
+        "reason": "fitness 0.54 < 0.6",
+        "rotation_correction_deg": 1.67416,
+        "source": 1306,
+        "target": 1379,
+        "translation_correction_m": 0.02224
+      },
+      {
+        "accepted": true,
+        "fitness": 0.79075,
+        "inlier_rmse": 0.02803,
+        "kind": "loop",
+        "reason": "ok",
+        "rotation_correction_deg": 1.07984,
+        "source": 945,
+        "target": 1009,
+        "translation_correction_m": 0.0598
+      },
+      {
+        "accepted": false,
+        "fitness": 0.55309,
+        "inlier_rmse": 0.03396,
+        "kind": "loop",
+        "reason": "fitness 0.55 < 0.6",
+        "rotation_correction_deg": 1.15848,
+        "source": 962,
+        "target": 1027,
+        "translation_correction_m": 0.02704
+      },
+      {
+        "accepted": false,
+        "fitness": 0.52618,
+        "inlier_rmse": 0.03346,
+        "kind": "loop",
+        "reason": "fitness 0.53 < 0.6",
+        "rotation_correction_deg": 1.21874,
+        "source": 1302,
+        "target": 1379,
+        "translation_correction_m": 0.01403
+      },
+      {
+        "accepted": true,
+        "fitness": 0.831,
+        "inlier_rmse": 0.03183,
+        "kind": "loop",
+        "reason": "ok",
+        "rotation_correction_deg": 0.94836,
+        "source": 941,
+        "target": 1005,
+        "translation_correction_m": 0.06348
+      },
+      {
+        "accepted": false,
+        "fitness": 0.55957,
+        "inlier_rmse": 0.03544,
+        "kind": "loop",
+        "reason": "fitness 0.56 < 0.6",
+        "rotation_correction_deg": 1.76283,
+        "source": 1297,
+        "target": 1383,
+        "translation_correction_m": 0.05355
+      },
+      {
+        "accepted": false,
+        "fitness": 0.49613,
+        "inlier_rmse": 0.03139,
+        "kind": "loop",
+        "reason": "fitness 0.50 < 0.6",
+        "rotation_correction_deg": 0.78464,
+        "source": 967,
+        "target": 1031,
+        "translation_correction_m": 0.02473
+      },
+      {
+        "accepted": false,
+        "fitness": 0.338,
+        "inlier_rmse": 0.04206,
+        "kind": "loop",
+        "reason": "fitness 0.34 < 0.6",
+        "rotation_correction_deg": 32.07598,
+        "source": 1323,
+        "target": 1388,
+        "translation_correction_m": 0.39065
+      },
+      {
+        "accepted": false,
+        "fitness": 0.57063,
+        "inlier_rmse": 0.03702,
+        "kind": "loop",
+        "reason": "fitness 0.57 < 0.6",
+        "rotation_correction_deg": 7.98089,
+        "source": 1293,
+        "target": 1383,
+        "translation_correction_m": 0.19391
+      },
+      {
+        "accepted": false,
+        "fitness": 0.51689,
+        "inlier_rmse": 0.0279,
+        "kind": "loop",
+        "reason": "fitness 0.52 < 0.6",
+        "rotation_correction_deg": 0.94204,
+        "source": 971,
+        "target": 1035,
+        "translation_correction_m": 0.04773
+      },
+      {
+        "accepted": false,
+        "fitness": 0.54821,
+        "inlier_rmse": 0.05243,
+        "kind": "loop",
+        "reason": "fitness 0.55 < 0.6",
+        "rotation_correction_deg": 107.76267,
+        "source": 271,
+        "target": 335,
+        "translation_correction_m": 1.45338
+      },
+      {
+        "accepted": false,
+        "fitness": 0.60372,
+        "inlier_rmse": 0.03538,
+        "kind": "loop",
+        "reason": "correction 10.4 deg > 8.0",
+        "rotation_correction_deg": 10.42293,
+        "source": 1289,
+        "target": 1383,
+        "translation_correction_m": 0.17932
+      },
+      {
+        "accepted": false,
+        "fitness": 0.32188,
+        "inlier_rmse": 0.05202,
+        "kind": "loop",
+        "reason": "fitness 0.32 < 0.6",
+        "rotation_correction_deg": 103.43833,
+        "source": 266,
+        "target": 331,
+        "translation_correction_m": 0.72886
+      },
+      {
+        "accepted": true,
+        "fitness": 0.84608,
+        "inlier_rmse": 0.02989,
+        "kind": "loop",
+        "reason": "ok",
+        "rotation_correction_deg": 0.92675,
+        "source": 936,
+        "target": 1001,
+        "translation_correction_m": 0.05227
+      }
+    ],
+    "rejected": 14,
+    "rejection_reasons": {
+      "correction larger than allowed": 1,
+      "low ICP fitness": 13
+    }
+  },
+  "method": "odometry initial guess; point-to-plane ICP between consecutive sampled frames; conservative loop closures; Open3D pose-graph optimisation with odometry anchors; roll/pitch kept from the supplied poses; automatic fallback to the original poses when metrics do not support the correction",
+  "parameters": {
+    "acceptance_rules": {
+      "max_footprint_change": 0.05,
+      "max_relative_degradation": 0.03,
+      "max_rotation_deg": 5.0,
+      "max_tilt_change_deg": 1.0,
+      "max_translation_m": 0.5,
+      "min_accepted_sequential_fraction": 0.5,
+      "min_relative_improvement": 0.02
+    },
+    "drift_options": {
+      "constrain_gravity": true,
+      "enable_loop_closure": true,
+      "icp_edge_weight": 0.02,
+      "loop_coarse_corr": 0.25,
+      "loop_edge_weight": 1.0,
+      "loop_max_candidates": 20,
+      "loop_max_corr": 0.1,
+      "loop_max_heading_deg": 60.0,
+      "loop_max_odom_distance": 1.5,
+      "loop_max_rmse": 0.04,
+      "loop_max_rotation_deg": 8.0,
+      "loop_max_translation": 0.4,
+      "loop_min_fitness": 0.6,
+      "loop_min_separation": 15,
+      "metric_voxel": 0.03,
+      "min_points": 300,
+      "normal_max_nn": 30,
+      "normal_radius": 0.15,
+      "odometry_edge_weight": 1.0,
+      "reg_voxel": 0.05,
+      "seq_max_corr": 0.1,
+      "seq_max_rmse": 0.05,
+      "seq_max_rotation_deg": 5.0,
+      "seq_max_translation": 0.15,
+      "seq_min_fitness": 0.5
+    },
+    "frame_step": 1,
+    "max_frames": 400,
+    "min_confidence": 2,
+    "output_voxel_m": 0.02
+  },
+  "pose_correction": {
+    "max_roll_pitch_change_deg": 0.0,
+    "max_roll_pitch_change_deg_before_gravity_constraint": 0.28987,
+    "max_rotation_deg": 0.85315,
+    "max_translation_m": 0.06051,
+    "mean_rotation_deg": 0.31938,
+    "mean_translation_m": 0.02034
+  },
+  "production_poses": "corrected",
+  "relative_improvement": {
+    "floor_band_thickness_m": -0.01171,
+    "floor_peak_share": 0.03904,
+    "neighbour_residual_median_m": 0.00038,
+    "overlap": 0.00624,
+    "wall_slab_cells_per_1000_points": -0.01172
+  },
+  "runtime_s": 48.23843,
+  "sequential_edges": {
+    "accepted": 379,
+    "accepted_mean_fitness": 0.96822,
+    "accepted_mean_inlier_rmse_m": 0.02447,
+    "accepted_median_fitness": 0.98923,
+    "accepted_median_inlier_rmse_m": 0.0245,
+    "accepted_median_rotation_correction_deg": 0.37338,
+    "accepted_median_translation_correction_m": 0.00903,
+    "attempted": 399,
+    "rejected": 20,
+    "rejection_reasons": {
+      "correction larger than allowed": 4,
+      "low ICP fitness": 1,
+      "too few points": 15
+    }
+  }
+}

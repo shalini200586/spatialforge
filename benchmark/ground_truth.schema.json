@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SpatialForge benchmark ground truth (spatialforge-ground-truth/1)",
+  "description": "Hand-measured (tape or laser) truth for ONE property. All lengths are metres, areas square metres. Every key except schema, property_id and rooms is optional: whatever is missing is reported as NOT EVALUATED, never as a pass.",
+  "type": "object",
+  "required": ["schema", "property_id", "rooms"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": "spatialforge-ground-truth/1"},
+    "property_id": {"type": "string"},
+    "physical_measurement": {"type": "boolean", "description": "true only for real tape/laser measurements. Anything else (examples, values read off a reconstruction) is labelled NOT PHYSICAL GROUND TRUTH BENCHMARK in every report."},
+    "measured_with": {"type": "string", "description": "e.g. 'laser distance meter', 'steel tape'"},
+    "measurement_uncertainty_m": {"type": "number", "minimum": 0},
+    "measured_on": {"type": "string"},
+    "notes": {"type": "string"},
+    "repeat_group": {"type": "string", "description": "Captures of the same room/property share this id (repeatability)."},
+    "capture_id": {"type": "string", "description": "Which capture this file describes within the repeat group, e.g. 'A' or 'B'."},
+    "footprint_area_m2": {"type": "number", "minimum": 0},
+    "rooms": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {"type": "string", "description": "Your own name for the room, e.g. 'kitchen'."},
+          "predicted_id": {"type": ["string", "null"], "description": "Optional: the room id in property.json (room_001). Without it rooms are matched by floor area, conservatively."},
+          "floor_area_m2": {"type": "number", "minimum": 0},
+          "ceiling_height_m": {"type": "number", "minimum": 0},
+          "polygon": {"type": "array", "items": {"type": "array", "items": {"type": "number"}}, "description": "Optional [x, z] corners in metres, in any frame; only the shape is informational."},
+          "walls": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "length_m"],
+              "additionalProperties": false,
+              "properties": {
+                "id": {"type": "string"},
+                "predicted_id": {"type": ["string", "null"], "description": "Optional: the wall id in property.json (wall_003)."},
+                "length_m": {"type": "number", "minimum": 0}
+              }
+            }
+          }
+        }
+      }
+    },
+    "openings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "width_m"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {"type": "string"},
+          "predicted_id": {"type": ["string", "null"]},
+          "type": {"enum": ["door", "window", "opening"]},
+          "width_m": {"type": "number", "minimum": 0},
+          "height_m": {"type": "number", "minimum": 0},
+          "room_id": {"type": "string", "description": "A room id from 'rooms' that the opening is in."},
+          "connects": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "adjacency": {"type": "array", "items": {"type": "array", "items": {"type": "string"}, "minItems": 2}, "description": "Pairs of room ids that are directly connected."},
+    "damage": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "class"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {"type": "string"},
+          "class": {"enum": ["crack", "stain"]},
+          "room_id": {"type": "string"},
+          "width_m": {"type": "number", "minimum": 0},
+          "length_m": {"type": "number", "minimum": 0},
+          "area_m2": {"type": "number", "minimum": 0}
+        }
+      }
+    }
+  }
+}

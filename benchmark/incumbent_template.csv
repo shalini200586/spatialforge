@@ -1,0 +1,13 @@
+room_id,dimension_id,ground_truth_m,spatialforge_m,incumbent_m,notes
+room_A,wall_1_length,,,,fill from the tape/laser sheet; spatialforge_m from property.json; incumbent_m from the app's export (name and version here)
+room_A,wall_2_length,,,,
+room_A,wall_3_length,,,,
+room_A,wall_4_length,,,,
+room_A,ceiling_height,,,,
+room_A,door_width,,,,
+room_B,wall_1_length,,,,
+room_B,wall_2_length,,,,
+room_B,wall_3_length,,,,
+room_B,wall_4_length,,,,
+room_B,ceiling_height,,,,
+room_B,door_width,,,,

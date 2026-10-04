@@ -1,0 +1,689 @@
+{
+  "capture": {
+    "device": {
+      "model": null,
+      "video": {
+        "codec": "hevc",
+        "container": "mp4",
+        "duration_s": 37.1833,
+        "fps": 46.1228,
+        "frame_count": 1715,
+        "height": 1440,
+        "probed_frames": 30,
+        "seek_ok": true,
+        "width": 1920
+      }
+    },
+    "source": {
+      "name": "rgb",
+      "path": "C:\\captures\\single_room\\c00a170fe1\\rgb.mp4"
+    },
+    "tier": "video",
+    "video": {
+      "keyframes": 145,
+      "metric_scale_available": true,
+      "registered_images": 24,
+      "tracking_quality": "weak"
+    }
+  },
+  "concealed_damage_flags": [],
+  "damage_regions": [
+    {
+      "area_m2": {
+        "confidence": null,
+        "interval": {
+          "high": 0.0503,
+          "low": 0.0117
+        },
+        "quality": "moderate",
+        "source_tier": "video",
+        "unit": "m2",
+        "value": 0.031
+      },
+      "class": "crack",
+      "confidence": 0.743,
+      "damage_id": "damage_001",
+      "height_m": {
+        "confidence": null,
+        "interval": {
+          "high": 0.3435,
+          "low": 0.183
+        },
+        "quality": "moderate",
+        "source_tier": "video",
+        "unit": "m",
+        "value": 0.2632
+      },
+      "image_region": {
+        "area_px": 2593.8,
+        "bbox": [
+          191.2,
+          218.8,
+          353.8,
+          273.8
+        ],
+        "polygon": [
+          [
+            191.2,
+            257.5
+          ],
+          [
+            196.2,
+            263.8
+          ],
+          [
+            206.2,
+            266.2
+          ],
+          [
+            317.5,
+            273.8
+          ],
+          [
+            322.5,
+            270.0
+          ],
+          [
+            321.2,
+            258.8
+          ],
+          [
+            332.5,
+            256.2
+          ],
+          [
+            336.2,
+            245.0
+          ],
+          [
+            347.5,
+            248.8
+          ],
+          [
+            353.8,
+            242.5
+          ],
+          [
+            331.2,
+            233.8
+          ],
+          [
+            327.5,
+            236.2
+          ],
+          [
+            328.8,
+            242.5
+          ],
+          [
+            311.2,
+            245.0
+          ],
+          [
+            296.2,
+            242.5
+          ],
+          [
+            297.5,
+            235.0
+          ],
+          [
+            280.0,
+            231.2
+          ],
+          [
+            270.0,
+            232.5
+          ],
+          [
+            265.0,
+            238.8
+          ],
+          [
+            243.8,
+            237.5
+          ],
+          [
+            237.5,
+            235.0
+          ],
+          [
+            240.0,
+            232.5
+          ],
+          [
+            238.8,
+            228.8
+          ],
+          [
+            223.8,
+            226.2
+          ],
+          [
+            207.5,
+            218.8
+          ],
+          [
+            202.5,
+            222.5
+          ],
+          [
+            202.5,
+            235.0
+          ],
+          [
+            192.5,
+            240.0
+          ]
+        ]
+      },
+      "length_m": {
+        "confidence": null,
+        "interval": {
+          "high": 0.2616,
+          "low": 0.1389
+        },
+        "quality": "moderate",
+        "source_tier": "video",
+        "unit": "m",
+        "value": 0.2002
+      },
+      "metric_reliable": true,
+      "other_sources": [
+        {
+          "frame_index": 545,
+          "image_id": "kf_0042.jpg",
+          "image_size": [
+            1280,
+            960
+          ],
+          "tier": "video"
+        }
+      ],
+      "quality": "strong",
+      "room_id": null,
+      "source": {
+        "frame_index": 520,
+        "image_id": "kf_0041.jpg",
+        "image_size": [
+          1280,
+          960
+        ],
+        "tier": "video"
+      },
+      "surface_extent": {
+        "u_max": 1.4814,
+        "u_min": 1.2324,
+        "v_max": 0.4781,
+        "v_min": 0.2148
+      },
+      "surface_id": "wall_001",
+      "surface_type": "wall",
+      "warnings": [],
+      "width_m": {
+        "confidence": null,
+        "interval": {
+          "high": 0.325,
+          "low": 0.1731
+        },
+        "quality": "moderate",
+        "source_tier": "video",
+        "unit": "m",
+        "value": 0.2491
+      }
+    }
+  ],
+  "openings": [],
+  "property": {
+    "footprint": null,
+    "opening_count": 0,
+    "room_count": 0,
+    "status": "partial",
+    "wall_count": 1
+  },
+  "provenance": {
+    "assumptions": [
+      "Metric scale is estimated, not measured: it is the median agreement between a monocular metric-depth model and the SfM geometry, and its spread is carried into every interval.",
+      "SfM and depth are pinhole + one radial term; the camera is shared by all keyframes.",
+      "Walls are vertical and floors horizontal once gravity is estimated from the point cloud.",
+      "Intervals are engineering uncertainty ranges, not calibrated confidence intervals."
+    ],
+    "coordinate_frame": "gravity-aligned from scene geometry (+Y up), arbitrary yaw, metres; not georeferenced",
+    "damage_analysis": {
+      "concealed_flags": 0,
+      "detections": 1,
+      "images_analysed": 24,
+      "method": {
+        "classes": [
+          "crack",
+          "stain"
+        ],
+        "confidence": "heuristic score, not a probability",
+        "crack": "black-hat dark-ridge extraction + elongation/thinness filters, straight lines rejected",
+        "detector": "deterministic OpenCV image processing (no learned model)",
+        "mapping": "pixel rays cast onto wall/floor/ceiling planes of the property; nearest valid surface; metric extent only if >= 80% of the outline agrees on one non-grazing surface",
+        "stain": "chroma deviation from a median-filtered Lab background; pure shadows rejected"
+      },
+      "rules": {
+        "CDR-001": "stain_near_floor_wall_junction",
+        "CDR-002": "stain_near_ceiling_junction",
+        "CDR-003": "stain_cluster_on_wall",
+        "CDR-004": "crack_at_opening_corner",
+        "CDR-005": "long_crack",
+        "CDR-006": "crack_with_colocated_stain"
+      },
+      "scope_items": 1,
+      "with_metric_extent": 1
+    },
+    "fallback_decisions": [
+      {
+        "decision": "tracking WEAK",
+        "reason": "24/145 keyframes registered (17%); 1978 sparse points; mean reprojection error 0.59 px; low registration ratio or sparse structure: trajectory may be fragmentary; 6 disconnected models were found (sizes [24, 23, 17, 16, 14]); only the largest is used",
+        "stage": "tracking_quality"
+      },
+      {
+        "decision": "moderate metric scale, 0.2066 m per SfM unit",
+        "reason": "median of 24 per-frame scales over 10180 correspondences; frame-to-frame spread 7%, standard error 1.4%, model floor 10%",
+        "stage": "metric_scale"
+      },
+      {
+        "decision": "each frame's depth is rescaled to the SfM geometry at the global metric scale",
+        "reason": "single-frame metric depth varies by tens of percent between frames; the global scale is the only absolute quantity taken from the depth model",
+        "stage": "depth_alignment"
+      },
+      {
+        "decision": "weak gravity estimate (confidence 0.31)",
+        "reason": "height-slab concentration within a cone around the least-variance axis of the camera path + wall-verticality refinement; sign: floor below the cameras at a plausible distance",
+        "stage": "gravity"
+      }
+    ],
+    "keyframe_strategy": {
+      "candidates": 343,
+      "count": 145,
+      "method": "temporal spacing + Laplacian sharpness + LK parallax, deterministic",
+      "rejected_blur": 14,
+      "rejected_rapid_motion": 12,
+      "thinned": 0
+    },
+    "metric_depth": {
+      "device": "cpu",
+      "license_note": "upstream Depth-Anything-V2 repository: Small models Apache-2.0 (the Base/Large/Giant checkpoints are CC-BY-NC-4.0); the Hugging Face card carries no licence field - verify before redistribution",
+      "max_depth_m": 20.0,
+      "metric": true,
+      "model": "Depth Anything V2 Metric-Indoor-Small",
+      "parameters_m": 24.8,
+      "repo": "depth-anything/Depth-Anything-V2-Metric-Indoor-Small-hf",
+      "revision": "8078d68a9c75a972131914f6afd0c1723be0da7f"
+    },
+    "metric_scale": {
+      "correspondences": 10180,
+      "frame_spread_rel": 0.0703,
+      "frames_tried": 24,
+      "frames_used": 24,
+      "max_frame_scale": 0.2323,
+      "median_scale": 0.2066,
+      "metres_per_sfm_unit": 0.2066,
+      "metric_scale_available": true,
+      "min_frame_scale": 0.1545,
+      "model_floor_rel": 0.1,
+      "reasons": [
+        "median of 24 per-frame scales over 10180 correspondences",
+        "frame-to-frame spread 7%, standard error 1.4%, model floor 10%"
+      ],
+      "scale_quality": "moderate",
+      "sigma_rel": 0.101,
+      "standard_error_rel": 0.0144
+    },
+    "pipeline": {
+      "schema_version": "1.0",
+      "spatialforge_version": "0.1.0",
+      "tier": "video",
+      "tier_detection": "rgb.mp4 is a video file (.mp4)"
+    },
+    "runtime": {
+      "damage_method": {
+        "description": "crack (dark thin ridges) and stain (chroma deviation) detectors; no learned model",
+        "name": "deterministic-opencv",
+        "version": "1"
+      },
+      "determinism": {
+        "deterministic": "LiDAR reconstruction, drift stage, planes, walls, rooms, openings, scale estimation, gravity, fusion, stitching, damage analysis, serialization and rendering are deterministic for identical inputs.",
+        "excluded_from_comparison": [
+          "timing",
+          "run_report.json timestamps and durations"
+        ],
+        "not_bit_reproducible": [
+          "PyCOLMAP structure-from-motion (video and photo tiers) is multi-threaded: registered image sets and poses can differ slightly between runs, and so can everything built on them.",
+          "Video seeking can land a few frames apart across decoder versions."
+        ]
+      },
+      "libraries": {
+        "Pillow": "12.2.0",
+        "numpy": "2.1.2",
+        "open3d": "0.20.0",
+        "opencv-python-headless": "5.0.0.93",
+        "pycolmap": "4.2.1",
+        "torch": "2.14.1",
+        "transformers": "5.18.0"
+      },
+      "platform": "Windows 10 AMD64",
+      "python": "3.11.9",
+      "python_implementation": "CPython",
+      "spatialforge_version": "0.1.0",
+      "tier": "video"
+    },
+    "sfm": {
+      "backend": "pycolmap",
+      "camera": {
+        "focal_px": 1071.3765,
+        "focal_source": "estimated by COLMAP (no focal-length metadata prior used)",
+        "height": 960,
+        "model": "SIMPLE_RADIAL",
+        "params": [
+          1071.3765,
+          640.0,
+          480.0,
+          0.0663
+        ],
+        "width": 1280
+      },
+      "disconnected_models": [
+        24,
+        23,
+        17,
+        16,
+        14,
+        13
+      ],
+      "keyframes": 145,
+      "matching": "sequential",
+      "mean_reprojection_error_px": 0.5872,
+      "registered_images": 24,
+      "registered_ratio": 0.1655,
+      "sparse_points": 1978,
+      "tracking_quality": "weak",
+      "unregistered": [
+        "kf_0000.jpg",
+        "kf_0001.jpg",
+        "kf_0002.jpg",
+        "kf_0003.jpg",
+        "kf_0004.jpg",
+        "kf_0005.jpg",
+        "kf_0006.jpg",
+        "kf_0007.jpg",
+        "kf_0008.jpg",
+        "kf_0009.jpg",
+        "kf_0010.jpg",
+        "kf_0011.jpg",
+        "kf_0012.jpg",
+        "kf_0013.jpg",
+        "kf_0014.jpg",
+        "kf_0015.jpg",
+        "kf_0016.jpg",
+        "kf_0017.jpg",
+        "kf_0018.jpg",
+        "kf_0019.jpg",
+        "kf_0044.jpg",
+        "kf_0045.jpg",
+        "kf_0046.jpg",
+        "kf_0047.jpg",
+        "kf_0048.jpg",
+        "kf_0049.jpg",
+        "kf_0050.jpg",
+        "kf_0051.jpg",
+        "kf_0052.jpg",
+        "kf_0053.jpg",
+        "kf_0054.jpg",
+        "kf_0055.jpg",
+        "kf_0056.jpg",
+        "kf_0057.jpg",
+        "kf_0058.jpg",
+        "kf_0059.jpg",
+        "kf_0060.jpg",
+        "kf_0061.jpg",
+        "kf_0062.jpg",
+        "kf_0063.jpg",
+        "kf_0064.jpg",
+        "kf_0065.jpg",
+        "kf_0066.jpg",
+        "kf_0067.jpg",
+        "kf_0068.jpg",
+        "kf_0069.jpg",
+        "kf_0070.jpg",
+        "kf_0071.jpg",
+        "kf_0072.jpg",
+        "kf_0073.jpg"
+      ],
+      "version": "4.2.1"
+    },
+    "video": {
+      "codec": "hevc",
+      "container": "mp4",
+      "duration_s": 37.1833,
+      "fps": 46.1228,
+      "frame_count": 1715,
+      "height": 1440,
+      "probed_frames": 30,
+      "seek_ok": true,
+      "width": 1920
+    }
+  },
+  "rooms": [],
+  "schema_version": "1.0",
+  "scope_line_items": [
+    {
+      "action": "seal_and_repair_crack",
+      "basis": "measured length_m of the projected region",
+      "damage_id": "damage_001",
+      "flag_id": null,
+      "item_id": "scope_001",
+      "quality": "moderate",
+      "quantity": {
+        "confidence": null,
+        "interval": {
+          "high": 0.2616,
+          "low": 0.1389
+        },
+        "quality": "moderate",
+        "source_tier": "video",
+        "unit": "m",
+        "value": 0.2002
+      },
+      "room_id": null,
+      "surface_id": "wall_001"
+    }
+  ],
+  "timing": {
+    "stages": {
+      "damage": 10.204,
+      "frontend": 252.114,
+      "geometry": 4.318,
+      "gravity": 10.956,
+      "metric_scale": 124.884,
+      "openings": 3.475,
+      "rendering": 0.45,
+      "rooms": 0.0,
+      "serialization": 0.0,
+      "stitching": 0.0,
+      "structure": 0.035,
+      "validation": 6.762
+    },
+    "total_duration_seconds": 413.996
+  },
+  "unverified_openings": [],
+  "walls": [
+    {
+      "end": {
+        "x": -2.4633,
+        "z": 0.3905
+      },
+      "evidence_quality": "moderate",
+      "id": "wall_001",
+      "length": {
+        "confidence": null,
+        "interval": {
+          "high": 2.6286,
+          "low": 1.4714
+        },
+        "quality": "moderate",
+        "source_tier": "video",
+        "unit": "m",
+        "value": 2.05
+      },
+      "observed_length": {
+        "confidence": null,
+        "interval": {
+          "high": 2.6286,
+          "low": 1.4714
+        },
+        "quality": "moderate",
+        "source_tier": "video",
+        "unit": "m",
+        "value": 2.05
+      },
+      "opening_ids": [],
+      "orientation": {
+        "confidence": null,
+        "interval": {
+          "high": 123.7086,
+          "low": 117.3472
+        },
+        "quality": "moderate",
+        "source_tier": "video",
+        "unit": "deg",
+        "value": 120.5279
+      },
+      "position_uncertainty": {
+        "confidence": null,
+        "interval": {
+          "high": 0.1169,
+          "low": 0.0655
+        },
+        "quality": null,
+        "source_tier": "video",
+        "unit": "m",
+        "value": 0.0912
+      },
+      "room_ids": [],
+      "segments": [
+        {
+          "end": {
+            "x": -2.4633,
+            "z": 0.3905
+          },
+          "length": {
+            "confidence": null,
+            "interval": {
+              "high": 2.6286,
+              "low": 1.4714
+            },
+            "quality": "moderate",
+            "source_tier": "video",
+            "unit": "m",
+            "value": 2.05
+          },
+          "start": {
+            "x": -1.422,
+            "z": -1.3754
+          }
+        }
+      ],
+      "start": {
+        "x": -1.422,
+        "z": -1.3754
+      }
+    }
+  ],
+  "warning_records": [
+    {
+      "code": "VIDEO_TRACKING_WEAK",
+      "message": "SfM tracking quality is WEAK: 24/145 keyframes registered in the largest connected model; the trajectory covers only part of the walkthrough.",
+      "recoverable": true,
+      "severity": "warning",
+      "stage": "frontend"
+    },
+    {
+      "code": "SFM_DISCONNECTED_MODELS",
+      "message": "SfM produced 6 disconnected models (sizes [24, 23, 17, 16, 14]); only the largest is used, so the rest of the video is not reconstructed.",
+      "recoverable": true,
+      "severity": "warning",
+      "stage": "frontend"
+    },
+    {
+      "code": "INTRINSICS_ESTIMATED",
+      "message": "Camera intrinsics were estimated by COLMAP (SIMPLE_RADIAL, shared by all keyframes); no focal-length metadata was used.",
+      "recoverable": true,
+      "severity": "info",
+      "stage": "frontend"
+    },
+    {
+      "code": "VIDEO_SCALE_ESTIMATED",
+      "message": "Video tier: metres come from a monocular metric-depth model calibrated against SfM; dimensions carry a relative 1-sigma of about 14% (scale 10%, SfM 10%, depth 3%) and are less certain than LiDAR.",
+      "recoverable": true,
+      "severity": "info",
+      "stage": "metric_scale"
+    },
+    {
+      "code": "STRUCTURE_NO_ROOMS",
+      "message": "No closed rooms were recovered; only structural wall segments are reported.",
+      "recoverable": true,
+      "severity": "warning",
+      "stage": "rooms"
+    },
+    {
+      "code": "STRUCTURE_INCOMPLETE_TOPOLOGY",
+      "message": "1 structural walls do not form any closed room.",
+      "recoverable": true,
+      "severity": "warning",
+      "stage": "rooms"
+    },
+    {
+      "code": "OPENINGS_RECALL_UNVERIFIED",
+      "message": "Opening recall has not been verified: openings in walls that were not detected, or in unclosed regions, are not reported.",
+      "recoverable": true,
+      "severity": "info",
+      "stage": "openings"
+    },
+    {
+      "code": "NO_GROUND_TRUTH",
+      "message": "No physical ground truth was supplied: dimensions are not benchmarked, and intervals are diagnostic uncertainty ranges, not calibrated confidence intervals.",
+      "recoverable": true,
+      "severity": "info",
+      "stage": "pipeline"
+    },
+    {
+      "code": "VIDEO_TRACKING_WEAK",
+      "message": "Tracking is weak, so the property is reported as partial.",
+      "recoverable": true,
+      "severity": "warning",
+      "stage": "frontend"
+    },
+    {
+      "code": "GRAVITY_LOW_CONFIDENCE",
+      "message": "Gravity (vertical) confidence is low, so floor/ceiling/wall geometry may be tilted.",
+      "recoverable": true,
+      "severity": "warning",
+      "stage": "gravity"
+    },
+    {
+      "code": "DAMAGE_CANDIDATES_ONLY",
+      "message": "Damage analysis is deterministic image processing (cracks, stains) on RGB evidence: detections are candidates, not verified defects, and no ground truth was available to measure precision or recall.",
+      "recoverable": true,
+      "severity": "info",
+      "stage": "damage"
+    }
+  ],
+  "warnings": [
+    "SfM tracking quality is WEAK: 24/145 keyframes registered in the largest connected model; the trajectory covers only part of the walkthrough.",
+    "SfM produced 6 disconnected models (sizes [24, 23, 17, 16, 14]); only the largest is used, so the rest of the video is not reconstructed.",
+    "Camera intrinsics were estimated by COLMAP (SIMPLE_RADIAL, shared by all keyframes); no focal-length metadata was used.",
+    "Video tier: metres come from a monocular metric-depth model calibrated against SfM; dimensions carry a relative 1-sigma of about 14% (scale 10%, SfM 10%, depth 3%) and are less certain than LiDAR.",
+    "No closed rooms were recovered; only structural wall segments are reported.",
+    "1 structural walls do not form any closed room.",
+    "Opening recall has not been verified: openings in walls that were not detected, or in unclosed regions, are not reported.",
+    "No physical ground truth was supplied: dimensions are not benchmarked, and intervals are diagnostic uncertainty ranges, not calibrated confidence intervals.",
+    "Tracking is weak, so the property is reported as partial.",
+    "Gravity (vertical) confidence is low, so floor/ceiling/wall geometry may be tilted.",
+    "Damage analysis is deterministic image processing (cracks, stains) on RGB evidence: detections are candidates, not verified defects, and no ground truth was available to measure precision or recall."
+  ]
+}

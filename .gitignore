@@ -1,4 +1,40 @@
+# Python
 __pycache__/
+*.py[cod]
 *.egg-info/
 .pytest_cache/
+.mypy_cache/
 .venv/
+venv/
+
+# Never commit model weights or caches (they live in %SPATIALFORGE_MODELS% or ~/.spatialforge/models)
+models/
+*.safetensors
+*.onnx
+*.pt
+*.pth
+*.bin
+
+# Outputs and temporary results
+outputs/
+dist/
+build/
+*.partial-*
+*.old-*
+scratch/
+tmp/
+
+# Raw captures and large media: keep them outside the repository
+*.ply
+*.mp4
+*.mov
+*.zip
+*.heic
+*.HEIC
+benchmark_raw/
+raw_benchmark_data/
+benchmark/raw/*
+!benchmark/raw/README.md
+
+# Frozen fix-loop records ARE tracked (evaluation_runs/before, evaluation_runs/after); their scratch outputs are not
+evaluation_runs/**/scratch/

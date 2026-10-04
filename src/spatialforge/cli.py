@@ -469,12 +469,48 @@ def main(argv: list[str] | None = None) -> int:
     pr.add_argument("--frame-step", type=int, default=1, help="lidar: use every Nth frame (default 1)")
     pr.add_argument("--max-keyframes", type=int, default=120, help="video: upper bound on SfM keyframes (default 120)")
     pr.add_argument("--max-depth-frames", type=int, default=64, help="video: keyframes that get a metric depth map (default 64)")
+    ev = sub.add_parser("evaluate", help="compare a result with hand-measured ground truth and apply the assignment gates",
+                        description="Reads property.json (+ run_report.json) and a ground-truth file; prints and optionally writes "
+                                    "evaluation.json / evaluation.md. A gate without ground truth is NOT EVALUATED, never PASS.")
+    ev.add_argument("--property", required=True, help="a process result folder or its property.json")
+    ev.add_argument("--ground-truth", required=True, help="ground-truth JSON (see benchmark/README.md)")
+    ev.add_argument("--run-report", help="run_report.json (default: the one next to property.json)")
+    ev.add_argument("--gates", help="gate thresholds JSON (default: the assignment thresholds, see benchmark/gates.json)")
+    ev.add_argument("--tier", choices=("lidar", "video", "photos"), help="override the tier recorded in property.json")
+    ev.add_argument("--repeat", help="a second capture of the same property (result folder or property.json): adds repeatability")
+    ev.add_argument("--output", help="folder for evaluation.json and evaluation.md")
+    ev.add_argument("--strict", action="store_true", help="exit 1 if any gate FAILS (NOT EVALUATED is not a failure)")
+
+    ci = sub.add_parser("compare-incumbent", help="dimension-by-dimension comparison with a consumer scanning app (CSV import)")
+    ci.add_argument("--csv", required=True, help="CSV shaped like benchmark/incumbent_template.csv")
+    ci.add_argument("--gates", help="gate thresholds JSON (for the tie tolerance)")
+    ci.add_argument("--output", help="folder for incumbent_comparison.json and .md")
+
+    sub.add_parser("doctor", help="check this machine: dependencies, model weights, which tiers are ready")
+
     args = parser.parse_args(argv)
 
     if args.command == "validate-lidar":
         result = validate_lidar_capture(args.path)
         print(format_report(result))
         return 1 if result.status is Status.INVALID else 0
+
+    if args.command == "evaluate":
+        from spatialforge.evaluation.commands import run_evaluate
+
+        return run_evaluate(args)
+
+    if args.command == "compare-incumbent":
+        from spatialforge.evaluation.commands import run_compare_incumbent
+
+        return run_compare_incumbent(args)
+
+    if args.command == "doctor":
+        from spatialforge.doctor import format_doctor, run_doctor
+
+        report = run_doctor()
+        print(format_doctor(report))
+        return 0 if any(t["ready"] for t in report["tiers"].values()) else 1
 
     if args.command == "process":
         from spatialforge.pipeline.product import run_product
