@@ -178,6 +178,16 @@ def run_photo_stages(capture: str | Path, opts: PhotoOptions) -> StageOutputs:
             results.append(res)
         by_id = {r.canonical_id: r for r in results}
         usable = [r for r in results if r.usable]
+        # the per-room wrapper record contains the room's own stages: keep only the mapping time in it and list the stages
+        # separately (prefixed with the room id), so durations fold into the standard stages without double counting
+        for res in results:
+            wrapper = next((st for st in stages if st.name == f"{res.canonical_id}_reconstruction"), None)
+            if wrapper is None:
+                continue
+            wrapper.seconds = max(0.0, wrapper.seconds - sum(sub.seconds for sub in res.stages))
+            for sub in res.stages:
+                stages.append(StageRecord(f"{res.canonical_id}/{sub.name}", sub.status, sub.seconds, list(sub.warnings), sub.error,
+                                          dict(sub.details)))
 
         # ---- 5. cross-room evidence, pair reconstructions, constraints ----
         geoms = {r.canonical_id: local_geom(r.canonical_id, r.prop, r.primary_room_id, _rank(r)) for r in usable}

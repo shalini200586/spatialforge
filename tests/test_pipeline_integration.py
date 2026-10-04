@@ -34,7 +34,7 @@ def test_complete_synthetic_property(tmp_path):
     assert op["type"] == "door" and set(op["room_ids"]) == room_ids and set(op["connected_room_ids"]) == room_ids
     assert all(x["connected_room_ids"] for x in d["rooms"])  # connectivity propagated, separate from adjacency
     assert all(x["adjacent_room_ids"] for x in d["rooms"])
-    assert d["damage"] == [] and d["concealed_damage_flags"] == [] and d["scope_line_items"] == []
+    assert d["damage_regions"] == [] and d["concealed_damage_flags"] == [] and d["scope_line_items"] == [] and "damage" not in d
     room = d["rooms"][0]
     assert room["area"]["interval"]["low"] <= room["area"]["value"] <= room["area"]["interval"]["high"]  # intervals kept
     assert op["width"]["interval"] is not None and op["width"]["quality"] in ("strong", "moderate", "weak")
@@ -70,7 +70,8 @@ def test_property_without_openings(tmp_path):
 def test_stage_warnings_propagate_to_property_and_run_report(tmp_path):
     r = run(tmp_path, stage_warnings=["2 separate ceiling levels found (3.02 m, 2.41 m)"])
     assert "2 separate ceiling levels found (3.02 m, 2.41 m)" in r.property["warnings"]
-    assert "2 separate ceiling levels found (3.02 m, 2.41 m)" in load(r, "run_report.json")["warnings"]
+    rec = next(w for w in load(r, "run_report.json")["warnings"] if w["message"] == "2 separate ceiling levels found (3.02 m, 2.41 m)")
+    assert rec["code"] == "STRUCTURE_CEILING_VARIATION" and rec["stage"] == "geometry"
 
 
 def test_fatal_validation_error_fails_cleanly(tmp_path):
@@ -80,7 +81,7 @@ def test_fatal_validation_error_fails_cleanly(tmp_path):
     r = process_capture("C:/data/bad", tmp_path / "out", stages_fn=boom)
     assert r.status == "failure" and r.exit_code == 1 and r.property is None
     report = load(r, "run_report.json")
-    assert report["status"] == "failure" and report["errors"][0]["stage"] == "capture_validation"
+    assert report["status"] == "failure" and report["errors"][0]["stage"] == "validation" and report["errors"][0]["raw_stage"] == "capture_validation"
     assert not (tmp_path / "out" / "property.json").exists() and not (tmp_path / "out" / "plan.png").exists()
 
 
@@ -107,10 +108,11 @@ def test_canonical_output_files_are_created(tmp_path):
     report = load(r, "run_report.json")
     assert report["status"] == r.status and report["tier"] == "lidar"
     assert report["counts"]["rooms"] == 2 and report["counts"]["openings"] == 1
-    assert {s["name"] for s in report["stages"]} >= {"capture_validation", "openings"}
+    assert {s["name"] for s in report["substages"]} >= {"capture_validation", "openings"}
+    assert [s["stage"] for s in report["stages"]][0] == "validation" and "openings" in {s["stage"] for s in report["stages"]}
     assert report["production_pose_source"] == "original" and report["fallback_decisions"][0]["decision"].startswith("kept")
     assert report["plan"]["rooms_drawn"] == 2 and report["plan"]["openings_drawn"] == 1
-    assert report["runtime_s"] >= 0 and "started_at" in report and "ended_at" in report
+    assert report["total_duration_seconds"] >= 0 and "runtime_s" not in report and "started_at" in report and "ended_at" in report
 
 
 def test_cli_exit_codes(tmp_path, monkeypatch, capsys):
@@ -124,10 +126,10 @@ def test_cli_exit_codes(tmp_path, monkeypatch, capsys):
 
     monkeypatch.setattr(lidar_pipeline, "run_lidar_stages", fail)
     assert main(["process", "C:/data/bad", "--tier", "lidar", "--output", str(tmp_path / "bad")]) == 1
-    assert "ERROR [capture_validation]" in capsys.readouterr().out
+    assert "ERROR [INPUT_INVALID]" in capsys.readouterr().out
     # the photos tier validates its input first: a missing photo directory is a clean failure, not "not implemented"
     assert main(["process", str(tmp_path / "no_such_photos"), "--tier", "photos", "--output", str(tmp_path / "v")]) == 1
-    assert "ERROR [photo_validation]" in capsys.readouterr().out
+    assert "ERROR [INPUT_NOT_FOUND]" in capsys.readouterr().out
 
 
 def test_repeated_run_gives_the_same_json_and_plan(tmp_path):

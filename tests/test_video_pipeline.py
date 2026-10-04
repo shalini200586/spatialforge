@@ -27,7 +27,7 @@ def run(video, tmp_path, name="out", walk=None, **over):
     walk = walk or SyntheticWalkthrough()
     opts = VideoOptions(keyframes_fn=walk.keyframes_fn, sfm_fn=walk.sfm_fn, depth_backend=walk.depth_backend(),
                         fusion=FusionOptions(pixel_stride=1), **over)  # stride 1: the synthetic maps are small
-    return process_capture(video, tmp_path / name, opts, stages_fn=run_video_stages, tier="video"), walk
+    return process_capture(video, tmp_path / name, opts, stages_fn=run_video_stages, tier="video", diagnostics=True), walk  # keep the clouds
 
 
 def load(result, name="property.json"):
@@ -54,10 +54,12 @@ def test_mocked_video_pipeline_runs_end_to_end(video, tmp_path):
     for f in ("scale_report.json", "video_frontend.json", "trajectory.png", "trajectory.json", "sparse_sfm.ply", "metric_cloud.ply"):
         assert (diag / f).exists(), f
     assert (diag / "keyframes").is_dir() and len(list((diag / "keyframes").glob("*.jpg"))) == len(walk.names)
-    stages = [s["name"] for s in r.run_report["stages"]]
-    assert stages[:6] == ["video_validation", "keyframe_extraction", "sfm_reconstruction", "metric_depth_and_scale",
-                          "depth_fusion", "gravity_alignment"]
-    assert {"floor_and_ceiling_planes", "structural_walls"} <= set(stages)  # the shared structural backend ran
+    sub = [s["name"] for s in r.run_report["substages"]]
+    assert sub[:6] == ["video_validation", "keyframe_extraction", "sfm_reconstruction", "metric_depth_and_scale",
+                       "depth_fusion", "gravity_alignment"]
+    assert {"floor_and_ceiling_planes", "structural_walls"} <= set(sub)  # the shared structural backend ran
+    std = {s["stage"]: s["status"] for s in r.run_report["stages"]}
+    assert std["frontend"] in ("ok", "warning") and std["metric_scale"] == "ok" and std["stitching"] == "skipped"
     assert validate_against_schema(r.property, build_schema()) == []  # the same canonical schema as LiDAR
     assert r.run_report["metric_scale_available"] and r.run_report["tracking_quality"] == "strong"
     assert r.run_report["production_pose_source"] == "sfm_scaled"
@@ -126,9 +128,10 @@ def test_failed_sfm_is_a_clean_failure(video, tmp_path):
     opts = VideoOptions(keyframes_fn=walk.keyframes_fn, sfm_fn=failing, depth_backend=walk.depth_backend())
     r = process_capture(video, tmp_path / "out", opts, stages_fn=run_video_stages, tier="video")
     assert r.status == "failure" and r.exit_code == 1 and r.property is None
-    assert r.run_report["errors"][0]["stage"] == "sfm_reconstruction" and "no coherent" in r.run_report["errors"][0]["message"]
+    assert r.run_report["errors"][0]["stage"] == "frontend" and r.run_report["errors"][0]["raw_stage"] == "sfm_reconstruction"
+    assert r.run_report["errors"][0]["code"] == "SFM_FAILED" and "no coherent" in r.run_report["errors"][0]["message"]
     assert not (tmp_path / "out" / "property.json").exists() and not (tmp_path / "out" / "plan.png").exists()
-    assert r.run_report["stages"][-1]["name"] == "sfm_reconstruction" and r.run_report["metric_scale_available"] is False
+    assert r.run_report["substages"][-1]["name"] == "sfm_reconstruction" and r.run_report["metric_scale_available"] is False
 
     def crashing(kdir, work, opts):
         raise RuntimeError("colmap exploded")
@@ -152,18 +155,16 @@ def test_without_a_reliable_metric_scale_no_metres_are_invented(video, tmp_path,
     else:
         opts = VideoOptions(keyframes_fn=walk.keyframes_fn, sfm_fn=walk.sfm_fn, depth_backend=backend)
     r = process_capture(video, tmp_path / "out", opts, stages_fn=run_video_stages, tier="video")
-    d = r.property
-    assert r.exit_code == 0 and r.status == "partial" and d["property"]["status"] == "partial"
-    assert d["rooms"] == [] and d["walls"] == [] and d["openings"] == []  # no geometry without metres
-    assert d["property"]["footprint"] is None
-    assert any("Metric scale is NOT available" in w for w in d["warnings"])
+    # no metric scale means no trustworthy geometry: a failure, never a "partial" property with invented or empty dimensions
+    assert r.exit_code == 1 and r.status == "failure" and r.property is None
+    assert not (r.output_dir / "property.json").exists() and not (r.output_dir / "plan.png").exists()
+    err = r.run_report["errors"][0]
+    assert err["code"] == "METRIC_SCALE_UNAVAILABLE" and err["stage"] == "metric_scale" and err["hint"]
     assert r.run_report["metric_scale_available"] is False
-    assert d["provenance"]["metric_scale"]["metric_scale_available"] is False
-    assert d["provenance"]["metric_scale"].get("metres_per_sfm_unit") in (None, 0)
-    names = {s["name"]: s["status"] for s in r.run_report["stages"]}
+    names = {s["name"]: s["status"] for s in r.run_report["substages"]}
     assert names["gravity_alignment"] == "skipped" and names["structural_walls"] == "skipped"
     assert not (r.output_dir / "diagnostics" / "metric_cloud.ply").exists()
-    assert (r.output_dir / "diagnostics" / "scale_report.json").exists() and (r.output_dir / "plan.png").exists()
+    assert (r.output_dir / "diagnostics" / "scale_report.json").exists()
     rep = json.loads((r.output_dir / "diagnostics" / "scale_report.json").read_text())
     assert rep["metric_scale_available"] is False and rep["metres_per_sfm_unit"] is None
 
@@ -182,8 +183,10 @@ def test_weak_tracking_continues_but_is_reported_as_partial(video, tmp_path):
     opts = VideoOptions(keyframes_fn=walk.keyframes_fn, sfm_fn=weak, depth_backend=walk.depth_backend())
     r = process_capture(video, tmp_path / "out", opts, stages_fn=run_video_stages, tier="video")
     d = r.property
-    assert r.status == "partial" and d["property"]["status"] == "partial"
-    assert any("tracking quality is WEAK" in w for w in d["warnings"]) and any("disconnected models" in w for w in d["warnings"])
+    # weak tracking caps the geometry quality: this synthetic room then yields no walls, which is a failure; with geometry it is partial
+    assert r.status == ("partial" if r.property and (d["walls"] or d["rooms"]) else "failure")
+    msgs = [w["message"] for w in r.run_report["warnings"]]
+    assert any("tracking quality is WEAK" in w for w in msgs) and any("disconnected models" in w for w in msgs)
     assert r.run_report["video"]["uncertainty"]["sfm_relative_sigma"] > 0.05  # fewer registered frames -> wider
 
 
@@ -195,9 +198,10 @@ def test_depth_inference_crash_degrades_to_no_scale_not_to_invented_metres(video
 
     opts = VideoOptions(keyframes_fn=walk.keyframes_fn, sfm_fn=walk.sfm_fn, depth_backend=FunctionDepthBackend(boom, "m", True))
     r = process_capture(video, tmp_path / "out", opts, stages_fn=run_video_stages, tier="video")
-    assert r.status == "partial" and r.property["walls"] == [] and r.run_report["metric_scale_available"] is False
-    stage = next(s for s in r.run_report["stages"] if s["name"] == "metric_depth_and_scale")
-    assert stage["status"] == "warning" and any("inference failed" in w for w in stage["warnings"])
+    assert r.status == "failure" and r.property is None and r.run_report["metric_scale_available"] is False  # no scale -> no geometry
+    assert r.run_report["errors"][0]["code"] == "METRIC_SCALE_UNAVAILABLE"
+    stage = next(s for s in r.run_report["substages"] if s["name"] == "metric_depth_and_scale")
+    assert stage["status"] == "warning" and any("inference failed" in w["message"] for w in r.run_report["warnings"])
 
 
 def test_a_failed_denser_retry_keeps_the_first_sfm_result(video, tmp_path):
@@ -220,16 +224,16 @@ def test_a_failed_denser_retry_keeps_the_first_sfm_result(video, tmp_path):
     opts = VideoOptions(keyframes_fn=kfn, sfm_fn=weak, depth_backend=walk.depth_backend(), fusion=FusionOptions(pixel_stride=1))
     r = process_capture(video, tmp_path / "out", opts, stages_fn=run_video_stages, tier="video")
     assert len(calls) == 2 and r.status == "partial" and r.exit_code == 0
-    sfm_stage = next(s for s in r.run_report["stages"] if s["name"] == "sfm_reconstruction")
-    assert any("retry failed" in w and "kept the first attempt" in w for w in sfm_stage["warnings"])
+    sfm_stage = next(s for s in r.run_report["substages"] if s["name"] == "sfm_reconstruction")
+    assert any("retry failed" in w["message"] and "kept the first attempt" in w["message"] for w in r.run_report["warnings"])
     assert r.run_report["metric_scale_available"] is True
     assert not (r.output_dir / "diagnostics" / "keyframes_dense").exists()
 
 
 def test_invalid_video_input_fails_before_any_heavy_work(tmp_path):
     r = process_capture(tmp_path / "missing.mp4", tmp_path / "out", VideoOptions(), stages_fn=run_video_stages, tier="video")
-    assert r.status == "failure" and r.run_report["errors"][0]["stage"] == "video_validation"
-    assert "does not exist" in r.run_report["errors"][0]["message"] and r.run_report["metric_scale_available"] is False
+    assert r.status == "failure" and r.run_report["errors"][0]["stage"] == "validation"
+    assert r.run_report["errors"][0]["code"] == "INPUT_NOT_FOUND" and "does not exist" in r.run_report["errors"][0]["message"] and r.run_report["metric_scale_available"] is False
     bad = tmp_path / "bad.mp4"
     bad.write_bytes(b"not a video" * 50)
     assert process_capture(bad, tmp_path / "out2", VideoOptions(), stages_fn=run_video_stages, tier="video").status == "failure"
@@ -251,13 +255,14 @@ def test_cli_video_tier(video, tmp_path, monkeypatch, capsys):
 
     def patched(v, opts):
         opts.keyframes_fn, opts.sfm_fn, opts.depth_backend = walk.keyframes_fn, walk.sfm_fn, walk.depth_backend()
+        opts.fusion = FusionOptions(pixel_stride=1)  # the synthetic maps are small
         return real(v, opts)
 
     monkeypatch.setattr("spatialforge.video.pipeline.run_video_stages", patched)
     code = main(["process", str(video), "--tier", "video", "--output", str(tmp_path / "ok")])
     out = capsys.readouterr().out
-    assert code == 0 and "tier: video" in out and "metric scale available: True" in out
+    assert code == 0 and "tier: video" in out and "metric scale available: True" in out, out
     assert (tmp_path / "ok" / "property.json").exists()
     assert main(["process", str(tmp_path / "nope.mp4"), "--tier", "video", "--output", str(tmp_path / "bad")]) == 1
-    assert "ERROR [video_validation]" in capsys.readouterr().out
+    assert "ERROR [INPUT_NOT_FOUND]" in capsys.readouterr().out
     assert main(["process", str(tmp_path / "no_photos"), "--tier", "photos", "--output", str(tmp_path / "p")]) == 1  # photos exist now

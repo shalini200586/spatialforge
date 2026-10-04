@@ -58,16 +58,17 @@ def test_damage_flows_through_the_main_pipeline(tmp_path):
     d = r.property
     assert r.exit_code == 0 and validate_against_schema(d, build_schema()) == []
     classes = sorted(x["class"] for x in d["damage_regions"])
-    assert classes == ["crack", "stain"] and d["damage"] == d["damage_regions"]
+    assert classes == ["crack", "stain"]
     for x in d["damage_regions"]:
         assert x["surface_type"] == "wall" and x["surface_id"] in {w["id"] for w in d["walls"]} and x["room_id"] in {r_["id"] for r_ in d["rooms"]}
         assert x["metric_reliable"] and x["width_m"]["interval"]["low"] < x["width_m"]["value"] < x["width_m"]["interval"]["high"]
         assert x["source"] == {"image_id": "frame_000100", "tier": "lidar", "frame_index": 100, "image_size": [1280, 960]}
     assert {i["action"] for i in d["scope_line_items"]} == {"seal_and_repair_crack", "treat_stain_and_repaint"}
     assert all(i["surface_id"] and i["damage_id"] for i in d["scope_line_items"])
-    stage = next(s for s in r.run_report["stages"] if s["name"] == "damage_analysis")
-    assert stage["status"] in ("ok", "warning") and stage["details"]["detections"] == 2 and stage["seconds"] > 0
-    assert d["timing"]["damage_analysis_s"] > 0 and d["provenance"]["damage_analysis"]["images_analysed"] == 1
+    stage = next(s for s in r.run_report["stages"] if s["stage"] == "damage")
+    assert stage["status"] in ("ok", "warning") and stage["duration_seconds"] > 0
+    assert next(s for s in r.run_report["substages"] if s["name"] == "damage_analysis")["details"]["detections"] == 2
+    assert d["timing"]["stages"]["damage"] > 0 and d["provenance"]["damage_analysis"]["images_analysed"] == 1
     diag = tmp_path / "out" / "diagnostics" / "damage"
     assert (diag / "damage_report.json").exists() and (diag / "damage_plan.png").exists() and (diag / "images" / "frame_000100.jpg").exists()
     assert not any("Damage detection is not part of this version" in w for w in d["warnings"])
@@ -84,10 +85,10 @@ def test_a_low_stain_raises_a_concealed_risk_flag_and_an_inspection_item(tmp_pat
 
 def test_damage_can_be_switched_off_and_nothing_else_changes(tmp_path):
     off = run(tmp_path, "off", damage=False).property
-    assert off["damage_regions"] == off["damage"] == [] and off["concealed_damage_flags"] == [] and off["scope_line_items"] == []
+    assert off["damage_regions"] == [] and off["concealed_damage_flags"] == [] and off["scope_line_items"] == []
     assert any("Damage detection is not part of this version" in w for w in off["warnings"])  # the old notice stays when it did not run
     on = run(tmp_path, "on").property
-    strip = lambda p: {k: v for k, v in p.items() if k not in ("damage", "damage_regions", "concealed_damage_flags", "scope_line_items", "warnings", "provenance", "timing")}  # noqa: E731
+    strip = lambda p: {k: v for k, v in p.items() if k not in ("damage", "damage_regions", "concealed_damage_flags", "scope_line_items", "warnings", "warning_records", "provenance", "timing")}  # noqa: E731
     assert strip(on) == strip(off)  # rooms, walls, openings and footprint are untouched by the damage layer
 
 
@@ -96,18 +97,19 @@ def test_a_failing_damage_analysis_is_a_warning_not_a_failure(tmp_path):
     d = r.property
     assert r.exit_code == 0 and d["damage_regions"] == [] and (tmp_path / "out" / "property.json").exists()
     assert any("Damage analysis failed and was skipped" in w and "video could not be opened" in w for w in d["warnings"])
-    stage = next(s for s in r.run_report["stages"] if s["name"] == "damage_analysis")
-    assert stage["status"] == "failed" and "video could not be opened" in stage["error"]
+    stage = next(s for s in r.run_report["stages"] if s["stage"] == "damage")
+    assert stage["status"] == "failed" and "video could not be opened" in stage["error"]["message"]
+    assert "DAMAGE_FAILED" in [w["code"] for w in r.run_report["warnings"]]
 
 
 def test_no_rgb_evidence_skips_the_analysis_cleanly(tmp_path):
     so = synthetic_outputs()
     so.evidence_fn = lambda: []
     r = run(tmp_path, so=so)
-    stage = next(s for s in r.run_report["stages"] if s["name"] == "damage_analysis")
+    stage = next(s for s in r.run_report["stages"] if s["stage"] == "damage")
     assert stage["status"] == "skipped" and r.property["damage_regions"] == []
-    plain = run(tmp_path, "plain", so=synthetic_outputs())  # a tier without any evidence provider: no stage at all
-    assert all(s["name"] != "damage_analysis" for s in plain.run_report["stages"])
+    plain = run(tmp_path, "plain", so=synthetic_outputs())  # a tier without any evidence provider: the stage is skipped
+    assert next(s for s in plain.run_report["stages"] if s["stage"] == "damage")["status"] == "skipped"
 
 
 def test_damage_output_through_the_pipeline_is_deterministic(tmp_path):

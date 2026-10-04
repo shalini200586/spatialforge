@@ -5,6 +5,9 @@ from __future__ import annotations
 import argparse
 import sys
 
+from spatialforge import __version__
+from spatialforge.config import TIER_CHOICES, ProcessConfig
+
 from spatialforge.lidar import LidarValidationResult, Status, validate_lidar_capture
 from spatialforge.lidar.reconstruction import (
     ReconstructionError,
@@ -308,15 +311,21 @@ def format_openings_report(rep: dict, output_dir) -> str:
 
 def format_process_summary(result) -> str:
     rep = result.run_report
-    lines = [f"Status: {rep['status'].upper()}   tier: {rep['tier']}   runtime: {rep.get('runtime_s', 0):.1f} s"]
+    tier = rep["tier"] + (f" (auto-detected: {rep['tier_detection']})" if rep.get("tier_detection") else "")
+    lines = [f"Status: {rep['status'].upper()}   tier: {tier}   duration: {rep.get('total_duration_seconds', 0):.1f} s"]
     for e in rep.get("errors", []):
-        lines.append(f"ERROR [{e['stage']}]: {e['message']}")
-    if "counts" in rep:
+        lines.append(f"ERROR [{e['code']}] {e['message']}")
+        for hint_line in (e.get("hint") or "").splitlines():
+            lines.append(f"  -> {hint_line}")
+    if rep.get("counts"):
         c = rep["counts"]
         lines.append(f"Rooms {c['rooms']}, walls {c['walls']} ({c['walls_strong_or_moderate']} strong/moderate), "
                      f"openings {c['openings']} (+{c['unverified_openings']} unverified), ceiling levels {c['ceiling_levels']}, "
                      f"rooms with a ceiling height {c['rooms_with_ceiling']}")
-        lines.append(f"Production poses: {rep['production_pose_source']}")
+        lines.append(f"Damage: {c['damage_regions']} detection(s), {c['concealed_damage_flags']} concealed-risk flag(s), "
+                     f"{c['scope_line_items']} scope item(s)")
+        if rep.get("production_pose_source"):
+            lines.append(f"Production poses: {rep['production_pose_source']}")
     if "placed_rooms" in rep.get("photos", {}):
         ph = rep["photos"]
         lines.append(f"Photo folders: {ph['folders']}   placed: {', '.join(ph['placed_rooms']) or 'none'}   "
@@ -326,14 +335,19 @@ def format_process_summary(result) -> str:
         ms = rep.get("video", {}).get("metric_scale", {})
         lines.append(f"Tracking: {rep.get('tracking_quality', '?')}   metric scale available: {rep['metric_scale_available']}"
                      + (f" ({ms.get('scale_quality')}, {ms.get('metres_per_sfm_unit')} m per SfM unit)" if ms.get("scale_quality") else ""))
-    if rep.get("warnings"):
-        lines.append(f"Warnings ({len(rep['warnings'])}):")
-        lines += [f"  - {w}" for w in rep["warnings"]]
-    for name, p in rep.get("outputs", {}).items():
-        path = result.files.get(name)
-        if path is not None and path.exists():
+    notable = [w for w in rep.get("warnings", []) if w["severity"] in ("warning", "error")]
+    infos = len(rep.get("warnings", [])) - len(notable)
+    if notable:
+        lines.append(f"Warnings ({len(notable)}" + (f", plus {infos} informational" if infos else "") + "):")
+        lines += [f"  - [{w['code']}] {w['message']}" for w in notable]
+    elif infos:
+        lines.append(f"{infos} informational note(s) in run_report.json")
+    for name, path in result.files.items():
+        if path.exists() and path.is_file():
             lines.append(f"  {name}: {path.stat().st_size:,} bytes")
-    lines.append(f"Output folder: {rep['output']}")
+        elif path.exists():
+            lines.append(f"  {name}/")
+    lines.append(f"Output folder: {rep['output']['directory']}")
     return "\n".join(lines)
 
 
@@ -347,6 +361,7 @@ def _size_arg(text: str) -> tuple[int, int]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="spatialforge")
+    parser.add_argument("--version", action="version", version=f"spatialforge {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
     p = sub.add_parser("validate-lidar", help="validate one LiDAR capture folder")
     p.add_argument("path", help="path to the capture folder")
@@ -437,13 +452,21 @@ def main(argv: list[str] | None = None) -> int:
     pr = sub.add_parser(
         "process",
         help="end-to-end: capture -> property.json + plan.png + run_report.json (+ diagnostics/)",
+        description="Process a LiDAR capture folder, a walkthrough video file or a directory of room photo folders into one "
+                    "property: property.json, plan.png, run_report.json and diagnostics/. Exit code 0 = success or partial, "
+                    "1 = failure, 2 = bad usage.",
     )
-    pr.add_argument("capture", help="capture folder (lidar), video file (video) or directory of room photo folders (photos)")
-    pr.add_argument("--tier", required=True, choices=["lidar", "video", "photos"], help="input tier")
-    pr.add_argument("--output", required=True, help="result folder")
+    pr.add_argument("capture", help="LiDAR capture folder, video file, or directory of room photo folders")
+    pr.add_argument("--tier", required=True, choices=TIER_CHOICES,
+                    help="input tier; 'auto' detects it from the input and refuses to guess when it is ambiguous")
+    pr.add_argument("--output", required=True, help="result folder (must be new or empty unless --overwrite)")
+    pr.add_argument("--no-damage", action="store_true", help="skip the visible-damage analysis (cracks, stains)")
+    pr.add_argument("--diagnostics", action="store_true",
+                    help="keep richer diagnostics (point clouds, keyframes); normal runs keep the output small")
+    pr.add_argument("--overwrite", action="store_true", help="replace an existing SpatialForge result in --output")
+    pr.add_argument("--debug", action="store_true", help="show tracebacks for unexpected errors")
     pr.add_argument("--max-frames", type=int, default=400, help="lidar: cap on frames used, evenly spaced (default 400)")
     pr.add_argument("--frame-step", type=int, default=1, help="lidar: use every Nth frame (default 1)")
-    pr.add_argument("--no-damage", action="store_true", help="skip the visible-damage analysis (cracks, stains)")
     pr.add_argument("--max-keyframes", type=int, default=120, help="video: upper bound on SfM keyframes (default 120)")
     pr.add_argument("--max-depth-frames", type=int, default=64, help="video: keyframes that get a metric depth map (default 64)")
     args = parser.parse_args(argv)
@@ -454,26 +477,15 @@ def main(argv: list[str] | None = None) -> int:
         return 1 if result.status is Status.INVALID else 0
 
     if args.command == "process":
-        from spatialforge.pipeline.lidar_pipeline import PipelineOptions, process_capture
+        from spatialforge.pipeline.product import run_product
 
-        if args.tier == "photos":
-            from spatialforge.photos.pipeline import PhotoOptions, run_photo_stages
-
-            result = process_capture(args.capture, args.output, PhotoOptions(), stages_fn=run_photo_stages, tier="photos",
-                                     damage=not args.no_damage)
-        elif args.tier == "video":
-            from spatialforge.video.pipeline import VideoOptions, run_video_stages
-
-            vopts = VideoOptions()
-            vopts.keyframes.target_max = args.max_keyframes
-            vopts.max_depth_frames = args.max_depth_frames
-            result = process_capture(args.capture, args.output, vopts, stages_fn=run_video_stages, tier="video",
-                                     damage=not args.no_damage)
-        else:
-            result = process_capture(args.capture, args.output,
-                                     PipelineOptions(frame_step=args.frame_step, max_frames=args.max_frames), tier=args.tier,
-                                     damage=not args.no_damage)
+        cfg = ProcessConfig(tier=args.tier, damage=not args.no_damage, diagnostics=args.diagnostics, overwrite=args.overwrite,
+                            debug=args.debug, lidar_max_frames=args.max_frames, lidar_frame_step=args.frame_step,
+                            video_max_keyframes=args.max_keyframes, video_max_depth_frames=args.max_depth_frames)
+        result = run_product(args.capture, args.output, cfg)
         print(format_process_summary(result))
+        if args.debug and result.run_report.get("traceback"):
+            print(result.run_report["traceback"], file=sys.stderr)
         return result.exit_code
 
     if args.command == "analyze-openings":

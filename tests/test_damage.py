@@ -119,7 +119,7 @@ def test_detection_serialization_and_schema():
     d = property_to_dict(prop)  # validated against the published schema
     assert validate_against_schema(d, build_schema()) == []
     r = d["damage_regions"][0]
-    assert d["damage"] == d["damage_regions"]  # the old key is an identical deprecated alias
+    assert "damage" not in d  # the deprecated alias was removed: damage_regions is the one canonical key
     assert set(r) >= {"damage_id", "class", "confidence", "quality", "source", "image_region", "room_id", "surface_id", "width_m",
                       "height_m", "area_m2", "length_m", "metric_reliable"}
     assert r["damage_id"] == "damage_001" and r["class"] == "stain" and r["source"]["image_id"] == "frame_000001"

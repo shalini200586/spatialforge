@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "spatialforge"
-version = "0.1.0"
-description = "SpatialForge: LiDAR capture validation and metadata inspection"
+dynamic = ["version"]  # the single source is spatialforge.__version__ (src/spatialforge/__init__.py)
+description = "SpatialForge: a dimensioned floor plan, damage findings and a machine-readable property from LiDAR, video or photos"
 requires-python = ">=3.11"
 # numpy: depth/confidence statistics. Pillow: decoding 16-bit grayscale PNGs
 # (the standard library cannot read PNG). Both are small and CPU-only.
@@ -28,6 +28,9 @@ test = ["pytest"]
 
 [project.scripts]
 spatialforge = "spatialforge.cli:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "spatialforge.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["src"]

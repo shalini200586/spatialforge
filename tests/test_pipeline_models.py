@@ -63,7 +63,7 @@ def test_partial_property_and_warnings():
     d = property_to_dict(prop)
     assert d["property"]["status"] == "partial" and d["rooms"] == [] and d["property"]["room_count"] == 0
     assert d["warnings"] == ["No closed rooms were recovered."]
-    assert d["damage"] == [] and d["concealed_damage_flags"] == [] and d["scope_line_items"] == []
+    assert d["damage_regions"] == [] and d["concealed_damage_flags"] == [] and d["scope_line_items"] == [] and "damage" not in d
     with pytest.raises(ModelError):
         simple_property(status="finished").validate()
 

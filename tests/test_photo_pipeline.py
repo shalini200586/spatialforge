@@ -35,7 +35,7 @@ def opts_for(sfm):
 def run(tmp, name="out", labels=("a", "b", "c"), sfm=None, **kw):
     root = synthetic_property_dir(tmp / f"in_{name}" / "photos", list(labels))
     sfm = sfm or SyntheticPhotoSfm()
-    r = process_capture(root, tmp / name, opts_for(sfm), stages_fn=run_photo_stages, tier="photos")
+    r = process_capture(root, tmp / name, opts_for(sfm), stages_fn=run_photo_stages, tier="photos", diagnostics=True)
     return r, sfm
 
 
@@ -218,10 +218,12 @@ def test_without_metric_depth_no_room_gets_metric_dimensions(tmp_path):
 
     o = PhotoOptions(sfm_backend=sfm, depth_backend_factory=factory)
     r = process_capture(root, tmp_path / "out", o, stages_fn=run_photo_stages, tier="photos")
-    d = r.property
-    assert r.status == "partial" and d["rooms"] == [] and d["walls"] == [] and d["property"]["footprint"] is None
-    assert [u["status"] for u in d["provenance"]["photos"]["unplaced_rooms"]] == ["unscaled", "unscaled"]
-    assert any("Metric depth is unavailable" in w for w in d["warnings"])
+    # no room has a metric scale: no trustworthy geometry, so a failure rather than an empty "partial" property
+    assert r.status == "failure" and r.exit_code == 1 and r.property is None
+    assert not (r.output_dir / "property.json").exists()
+    assert r.run_report["errors"][0]["code"] == "METRIC_SCALE_UNAVAILABLE"
+    assert [u["status"] for u in r.run_report["photos"]["unplaced_rooms"]] == ["unscaled", "unscaled"]
+    assert any("Metric depth is unavailable" in w["message"] for w in r.run_report["warnings"])
     assert r.run_report["metric_scale_available"] is False
 
 
@@ -431,8 +433,9 @@ def test_validation_failure_is_a_clean_failure(tmp_path):
     root = synthetic_property_dir(tmp_path / "p", ["a"], per_room=1)
     r = process_capture(root, tmp_path / "out", PhotoOptions(), stages_fn=run_photo_stages, tier="photos")
     assert r.status == "failure" and r.exit_code == 1 and r.property is None
-    assert r.run_report["errors"][0]["stage"] == "photo_validation" and "has 1 supported photo(s)" in r.run_report["errors"][0]["message"]
-    assert not (tmp_path / "out" / "property.json").exists() and r.run_report["stages"][0]["name"] == "photo_validation"
+    assert r.run_report["errors"][0]["stage"] == "validation" and "has 1 supported photo(s)" in r.run_report["errors"][0]["message"]
+    assert r.run_report["errors"][0]["code"] == "INPUT_INVALID" and r.run_report["errors"][0]["raw_stage"] == "photo_validation"
+    assert not (tmp_path / "out" / "property.json").exists() and r.run_report["substages"][0]["name"] == "photo_validation"
 
 
 def test_cli_photo_tier(tmp_path, monkeypatch, capsys):
@@ -450,4 +453,4 @@ def test_cli_photo_tier(tmp_path, monkeypatch, capsys):
     out = capsys.readouterr().out
     assert code == 0 and "tier: photos" in out and (tmp_path / "ok" / "property.json").exists()
     assert main(["process", str(tmp_path / "missing"), "--tier", "photos", "--output", str(tmp_path / "bad")]) == 1
-    assert "ERROR [photo_validation]" in capsys.readouterr().out
+    assert "ERROR [INPUT_NOT_FOUND]" in capsys.readouterr().out

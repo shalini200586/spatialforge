@@ -1,54 +1,133 @@
 # SpatialForge
 
-Turns a capture of a property into a dimensioned floor plan and a machine-readable description. The LiDAR tier
-(depth + camera poses), the video tier (a normal walkthrough video) and the photo tier (room folders of still photos) are
-implemented.
+Turns a capture of a property into a dimensioned floor plan, a machine-readable property description and damage findings.
+Three input tiers share one pipeline, one output contract and one status model:
 
-## Install
+| Tier | Input | Command |
+|---|---|---|
+| LiDAR | a capture folder (`depth/`, `odometry.csv`, `rgb.mp4`) | `--tier lidar` |
+| Video | one walkthrough video file | `--tier video` |
+| Photos | a folder of room folders with still photos | `--tier photos` |
+
+## Installation
+
+Python 3.11, CPU only, no GPU or compiler needed.
 
     pip install -e .[test]            # LiDAR tier
-    pip install -e .[test,video]      # plus the video tier (see "Video tier" below)
-    pip install -e .[damage]          # OpenCV only: the damage analysis for any tier (included in [video])
+    pip install -e .[test,video]      # plus the video and photo tiers (PyCOLMAP, PyTorch CPU, transformers, OpenCV)
+    pip install -e .[damage]          # OpenCV only: the damage analysis for the LiDAR tier
+
+    python -m spatialforge --version  # spatialforge 0.1.0
+
+## Model setup (video and photos only)
+
+The video and photo tiers estimate metric scale with a monocular depth model (Depth Anything V2 Metric-Indoor-Small, ~99 MB).
+It is **never downloaded automatically** and never stored in the repository. Download it once:
+
+    python scripts/download_models.py
+
+Weights are cached in `%SPATIALFORGE_MODELS%` (if set) or `~/.spatialforge/models`. If they are missing, `process` stops
+immediately with `ERROR [MODEL_WEIGHTS_MISSING]` and prints this same command. The LiDAR tier needs no weights.
 
 ## Usage
 
-    python -m spatialforge process CAPTURE --tier lidar --output RESULT
+    python -m spatialforge process "C:\capture\single_room"          --tier lidar  --output "C:\result\room"
+    python -m spatialforge process "C:\capture\walkthrough.mp4"      --tier video  --output "C:\result\walk"
+    python -m spatialforge process "C:\capture\property_photos"      --tier photos --output "C:\result\photos"
 
-One command runs every stage (capture validation, metric reconstruction with a pose-refinement check, floor and
-ceiling planes, structural walls, room topology, openings) and writes:
+`--tier auto` detects the tier from the input (a folder with `odometry.csv` + `depth/` is LiDAR, a video file is video, a
+folder of image sub-folders is photos). It decides only when the input is unambiguous; otherwise it fails and asks for an
+explicit `--tier`; it never guesses.
 
-    RESULT\property.json     canonical property description (schema v1.0, see below)
-    RESULT\plan.png          rendered, dimensioned floor plan (product output, not a debug view)
-    RESULT\run_report.json   operational report: status, per-stage timings and statuses, counts, warnings, errors
-    RESULT\diagnostics\      small debug artifacts (wall/room/opening overlays, stage summaries); no point clouds
+| Flag | Meaning |
+|---|---|
+| `--no-damage` | skip the visible-damage analysis (cracks, stains) |
+| `--diagnostics` | keep rich diagnostics (point clouds, keyframes); normal runs keep the output small |
+| `--overwrite` | replace an existing SpatialForge result in `--output` (default: refuse to touch a non-empty folder) |
+| `--debug` | show tracebacks for unexpected errors |
+| `--max-frames`, `--frame-step` | LiDAR frame selection (default 400 evenly spaced / every frame) |
+| `--max-keyframes`, `--max-depth-frames` | video keyframe and depth-frame caps (default 120 / 64) |
+| `--version` | print the package version |
 
-Exit code: 0 = success or partial result, 1 = failure (invalid capture, no metric reconstruction), 2 = bad usage.
-Options: `--max-frames 400` and `--frame-step 1` (evenly spaced, deterministic frame selection).
+## Outputs
 
-For a walkthrough video the same command takes the video file and the video tier (needs `pip install -e .[video]`
-and the one-off model download, see below):
+Every success or partial run writes the same four items, whatever the tier:
 
-    python -m spatialforge process "C:\capture\walkthrough.mp4" --tier video --output "C:\result"
+    RESULT\property.json     canonical property description (schema v1.0)
+    RESULT\plan.png          rendered, dimensioned floor plan
+    RESULT\run_report.json   status, per-stage timing, structured warnings and errors, provenance of the run
+    RESULT\diagnostics\      small debug artifacts and run.log (point clouds and keyframes only with --diagnostics)
 
-**Results are partial by design.** Only spaces whose walls form closed outlines become rooms, and only openings
-verified in 3D are reported. `property.status` says `partial` and `warnings` lists what is missing (incomplete
-room topology, unverified opening recall, no ground truth); nothing missing is filled in with fake geometry.
+A **failure** writes `run_report.json` and `diagnostics\` only: there is no `property.json` or `plan.png`, so a failed run can
+never be mistaken for a result. The folder is written to a staging directory first and swapped into place at the end; an
+interrupted run leaves a clearly marked `*.partial-*` folder and never a valid-looking result.
+
+### Status and exit codes
+
+| Status | Meaning | Exit code |
+|---|---|---|
+| `success` | core property recovered with sufficient geometry (`property.status` = `complete`) | 0 |
+| `partial` | useful output, but stages are missing or weak (`property.status` = `partial`); `warnings` say what | 0 |
+| `failure` | no trustworthy geometry (invalid capture, no coherent reconstruction, no metric scale, no walls or rooms) | 1 |
+
+Bad command-line usage exits with 2. A failure in an optional layer (damage analysis) is a warning; it never turns a result
+into a failure.
+
+### Warnings and errors
+
+Both are structured; the readable message is always kept.
+
+    warning: {"code": "VIDEO_TRACKING_WEAK", "stage": "frontend", "severity": "info|warning|error", "message": "...", "recoverable": true}
+    error:   {"code": "METRIC_SCALE_UNAVAILABLE", "stage": "metric_scale", "message": "...", "hint": "...", "recoverable": false}
+
+Expected problems (bad input, unsupported image, missing weights, unreadable video, no metric scale, output folder in the way)
+print `ERROR [CODE] message` plus a hint and exit non-zero, without a traceback; with `--debug` the traceback is shown.
+
+### Stages and timing
+
+`run_report.json` always lists the same 12 stages for every tier, in order: `validation, frontend, metric_scale, geometry,
+gravity, structure, rooms, openings, stitching, damage, rendering, serialization`. Each has `status` (`ok`, `warning`,
+`failed`, `skipped`), `duration_seconds`, `warnings` and `error`; stages a tier does not use are `skipped`. The report also has
+`total_duration_seconds`; the tier's own finer steps are kept under `substages`.
 
 ### property.json
 
 `schema_version "1.0"`, then `capture` (tier, source, device), `property` (status, footprint if available),
-`rooms` (polygon, area, perimeter, length x width where meaningful, wall ids, ceiling height where observed,
-adjacent and connected room ids, topology quality), `walls`, `openings` (type, width, height/sill where observed,
-room connectivity, existence/type quality), `unverified_openings`, `damage_regions`, `concealed_damage_flags` and
-`scope_line_items` (see "Damage analysis"; empty when the analysis is off or finds nothing), `warnings`, `provenance` (stages, pose source, depth scale, assumptions) and `timing`.
+`rooms`, `walls`, `openings`, `unverified_openings`, `damage_regions`, `concealed_damage_flags`, `scope_line_items`,
+`warnings` (readable) and `warning_records` (structured), `provenance` and `timing`. The structure is identical for all tiers;
+only `capture.tier` and each measurement's `source_tier` differ. `provenance` records the SpatialForge version, tier, Python
+and platform, PyCOLMAP/Open3D versions, the depth model, the damage method, input metadata, assumptions and fallback
+decisions. It never contains your user name, home path or credentials (home paths are written as `~`).
 
-Every measurement is `{value, unit, interval {low, high} | null, confidence | null, quality | null, source_tier}`.
-The interval is the stage's own uncertainty range, never invented. `confidence` is a heuristic score (not a
-probability) and is only present where a stage computes one (ceiling heights); other values carry a `quality` label.
-Output is deterministic (sorted keys, rounded numbers); only the `timing` section differs between identical runs.
+**Terminology.** Every measurement is `{value, unit, interval, confidence, quality, source_tier}`:
+- `interval` is the measurement range from the stage's own uncertainty; it is never a fixed made-up number and is `null` where
+  none is computed.
+- `confidence` is a numeric heuristic score, **not a probability**. It is present only where a stage computes one.
+- `quality` is the label `strong` / `moderate` / `weak` and is what most values carry.
 
-**Schema:** the case-study materials supplied no separate schema file, so SpatialForge defines schema v1.0
-(`schema/property.schema.json`, kept in sync with the code by a test). It is not an official evaluator schema.
+Uncertainty differs by tier: LiDAR is strongest (measured depth and poses); video propagates SfM quality and the monocular
+metric-scale uncertainty into every length; photos use each room's own scale plus the stitching uncertainty; damage extents
+inherit the uncertainty of the surface they sit on.
+
+Output is deterministic where the stages are (sorted keys, rounded numbers); only `timing`, timestamps and COLMAP-based
+results differ between identical runs (COLMAP is multi-threaded and not bit-reproducible).
+
+**Schema:** SpatialForge defines schema v1.0 itself (`schema/property.schema.json`, kept in sync with the code by a test);
+it is not an official evaluator schema.
+
+### Known limitations
+
+- Results are partial by design: only spaces whose walls close become rooms and only openings verified in 3D are reported.
+- Video and photo scale comes from a monocular depth model and is typically off by 10-15%; their intervals are much wider than
+  LiDAR's. Rooms are not forced to agree.
+- COLMAP is not bit-reproducible, so video and photo results vary slightly between runs.
+- Video and photo reconstruction depends on texture, overlap and parallax; fast scanning sweeps and white walls fragment SfM.
+- Damage detection is deterministic image processing, not a trained model: furniture or shadows can look like stains or
+  cracks. Treat every detection as a candidate for human review. Concealed-damage flags are rule-based risk indicators and never
+  assert that damage exists.
+- No ground truth was available, so precision and recall are unmeasured.
+- CPU-only: a video or photo property takes minutes to tens of minutes.
+- `--tier auto` looks at file and folder names only.
 
 ### plan.png
 
@@ -57,7 +136,9 @@ openings with their widths, on a metric-scaled white background. Policies: weak 
 any recovered room are dashed grey; unverified wall gaps are dotted; low-confidence openings are left out of the
 plan and listed under `unverified_openings`; a PARTIAL badge and note are always shown for partial results.
 
-## Video tier (tier 2)
+## Tier details
+
+### Video tier
 
     python -m spatialforge process "C:\capture\walkthrough.mp4" --tier video --output "C:\result"
 
@@ -73,7 +154,7 @@ ambiguous, so the pipeline needs two things and never claims metres from SfM by 
           -> scaled trajectory -> depth back-projected and fused -> gravity from geometry
           -> MetricScene -> the SAME floor / wall / room / opening stages as LiDAR -> canonical Property
 
-### Prerequisites and model setup
+#### Prerequisites and model setup
 
     pip install -e .[video]              # opencv-python-headless, pycolmap, torch (CPU), transformers
     python scripts/download_models.py    # ~100 MB, cached OUTSIDE the repository
@@ -81,10 +162,10 @@ ambiguous, so the pipeline needs two things and never claims metres from SfM by 
 The weights (Depth Anything V2 Metric-Indoor-Small, ~25M parameters, about 99 MB) are cached in
 `%SPATIALFORGE_MODELS%` or `~/.spatialforge/models` and are never committed. Behind a TLS-inspecting proxy install
 `truststore` (the script uses the operating system's certificate store; verification stays on). CPU only, no CUDA, no
-compilation (`pycolmap` and `torch` are prebuilt wheels). If the weights are missing the run does not fake anything: it
-returns a partial result with `metric_scale_available: false` and a warning.
+compilation (`pycolmap` and `torch` are prebuilt wheels). If the weights are missing, `process` stops before any work with `MODEL_WEIGHTS_MISSING`; if the weights are present but no
+consistent scale can be established, the run is a **failure** (`METRIC_SCALE_UNAVAILABLE`): no metres are invented.
 
-### How the stages work
+#### How the stages work
 
 - **Validation:** file exists, supported container, decodable, size, fps, duration (at least 5 s), seekable.
 - **Keyframes (deterministic, no randomness):** candidates at a fixed rate from one decode pass; blurred candidates
@@ -114,7 +195,7 @@ returns a partial result with `metric_scale_available: false` and a warning.
   quadrature; stage intervals are widened by +-2 sigma in quadrature (areas by twice that), and measurement quality is
   capped by the scale quality. These are engineering estimates, not calibrated intervals.
 
-### Known limitations
+#### Video limitations
 
 - **Scale depends on a monocular depth model.** Measured against ARKit poses on the sample captures, the depth-derived
   scale was off by +12% to +16% (oracle poses) and by -12% and +5% in two real-SfM runs. Intervals are therefore much
@@ -130,7 +211,7 @@ returns a partial result with `metric_scale_available: false` and a warning.
 - Gravity sign relies on weak cues when neither floor nor image-up is decisive; the confidence reports it.
 - Typical runtime on a 14-thread CPU: 6-10 minutes for a 1-3 minute video.
 
-## Photo tier (tier 1)
+### Photo tier
 
     python -m spatialforge process property_photos --tier photos --output result
 
@@ -159,6 +240,7 @@ The output is ONE property (same `property.json` schema, `plan.png`, `run_report
    never STRONG), cached metric monocular depth (the video tier's model), the room's **own** metric scale (never borrowed from
    another room), gravity from geometry, then the shared floor / wall / room / opening stages. A failed SfM or missing scale
    gives an unreconstructed / unscaled room with **no geometry**: no typical room size, door width or ceiling height is used.
+   If no room gets a scale the run is a failure.
 4. *Cross-room evidence:* for every room pair, geometrically VERIFIED feature matches between their photos (raw matches never
    count). A pair becomes a stitch candidate only with a verified image pair of at least 25 inliers at inlier ratio 0.25 and 50
    verified matches in total (`StitchOptions`).
@@ -188,7 +270,7 @@ calibrated intervals.
 local_plan.png}`, `stitching\{room_graph.json, stitch_constraints.json, overlap_report.json, stitching_initial.png,
 stitching_final.png}`.
 
-**Known limitations**
+**Photo limitations**
 - Monocular scale: each room's scale comes from a depth model and is typically off by 10-15%; rooms are not forced to agree.
 - Sparse or textureless rooms, and rooms photographed without overlap or without corners, give weak or failed SfM.
 - Poor cross-room evidence (no shared view, no doorway photographed from both sides) leaves rooms unplaced.
@@ -196,7 +278,7 @@ stitching_final.png}`.
 - Few photos mean walls and rooms often do not close; results are usually partial.
 - Reconstruction is slow-ish on CPU: a few minutes for a handful of rooms.
 
-## Damage analysis (all tiers)
+### Damage analysis (all tiers)
 
 `process` also looks for visible damage in the RGB evidence of the tier and maps it onto the property. It runs by default; add
 `--no-damage` to skip it (`pip install -e .[damage]`: OpenCV only, no model weights, CPU).
@@ -233,7 +315,7 @@ metric position, so they are not evaluated for detections without one (listed in
 `treat_stain_and_repaint` (quantity = area, m2); a concealed flag -> an inspection item (quantity 1). No metric extent means no
 quantity (null, weak quality), never an invented one.
 
-**Output:** `property.json` gains `damage_regions` (the old `damage` key is an identical deprecated alias), `concealed_damage_flags`
+**Output:** `property.json` gains `damage_regions` (the deprecated `damage` alias was removed in this version), `concealed_damage_flags`
 and `scope_line_items`, all typed in `schema/property.schema.json`. Diagnostics in `diagnostics\damage\`: `damage_report.json`
 (every region, flag, item, per-image counts, rule evaluations), `damage_plan.png` (markers on the plan) and `images\*.jpg` (evidence
 images with outlines and labels).
@@ -244,9 +326,11 @@ rejected as an edge; shadows with a colour cast can pass as stains; low-texture 
 inherit the geometry's accuracy (video and photo scale is only ~10-15% reliable). LiDAR frame selection uses video seeking, which can
 be a few frames off. Treat every detection as a candidate for human review.
 
-## Development: individual stage commands
+## Advanced: internal stage commands
 
-These remain available for debugging; `process` runs them all.
+The sections below document the individual stages. They remain available for debugging; `process` runs them all.
+
+### Capture validation
 
     python -m spatialforge validate-lidar "C:\path\to\capture"
 

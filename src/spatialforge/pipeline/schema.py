@@ -90,6 +90,8 @@ def build_schema() -> dict:
         "flag_id": {"type": ["string", "null"]}, "room_id": {"type": ["string", "null"]}, "action": STR,
         "quantity": {"anyOf": [_ref("Measurement"), {"type": "null"}]}, "quality": QUALITY, "basis": STR,
     })
+    defs["WarningRecord"] = _obj({"code": STR, "stage": STR, "severity": {"type": "string", "enum": ["info", "warning", "error"]},
+                                  "message": STR, "recoverable": {"type": "boolean"}})
     top = _obj({
         "schema_version": {"const": SCHEMA_VERSION},
         "capture": {"type": "object", "required": ["tier", "source"]},
@@ -104,10 +106,10 @@ def build_schema() -> dict:
         "openings": {"type": "array", "items": _ref("Opening")},
         "unverified_openings": {"type": "array", "items": _ref("Opening")},
         "damage_regions": {"type": "array", "items": _ref("DamageRegion")},
-        "damage": {"type": "array", "items": _ref("DamageRegion")},  # deprecated alias of damage_regions
         "concealed_damage_flags": {"type": "array", "items": _ref("ConcealedFlag")},
         "scope_line_items": {"type": "array", "items": _ref("ScopeItem")},
-        "warnings": STRS, "provenance": {"type": "object"}, "timing": {"type": "object"},
+        "warnings": STRS, "warning_records": {"type": "array", "items": _ref("WarningRecord")},
+        "provenance": {"type": "object"}, "timing": {"type": "object"},
     })
     return {"$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "spatialforge/property.schema.json",
             "title": f"SpatialForge property schema v{SCHEMA_VERSION}",

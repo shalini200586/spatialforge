@@ -11,13 +11,14 @@ Weights live outside Git: `python scripts/download_models.py` (cache: %SPATIALFO
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import Callable, Protocol
 
 import numpy as np
 
-MODEL_REPO = "depth-anything/Depth-Anything-V2-Metric-Indoor-Small-hf"
+from spatialforge.config import DEPTH_MODEL_REPO as MODEL_REPO  # one definition of the repo and of where weights live
+from spatialforge.config import model_setup_hint, models_dir  # noqa: F401  (models_dir is re-exported for scripts/download_models.py)
+
 MODEL_NAME = "Depth Anything V2 Metric-Indoor-Small"
 
 
@@ -33,11 +34,6 @@ class DepthBackend(Protocol):
         """(H, W, 3) uint8 RGB -> (h, w) float32 depth in metres (resolution may differ from the input)."""
 
     def describe(self) -> dict: ...
-
-
-def models_dir() -> Path:
-    env = os.environ.get("SPATIALFORGE_MODELS")
-    return Path(env) if env else Path.home() / ".spatialforge" / "models"
 
 
 class DepthAnythingMetric:
@@ -58,8 +54,7 @@ class DepthAnythingMetric:
             self.model = AutoModelForDepthEstimation.from_pretrained(repo, cache_dir=str(self.cache_dir),
                                                                      local_files_only=True).eval()
         except Exception as exc:
-            raise DepthUnavailable(f"model weights not found in {self.cache_dir}. Run: python scripts/download_models.py "
-                                   f"({type(exc).__name__}: {exc})") from exc
+            raise DepthUnavailable(f"model weights not found in {self.cache_dir}. {model_setup_hint()}") from exc
         self._torch = torch
         cfg = self.model.config
         self.max_depth_m = float(getattr(cfg, "max_depth", 0) or 0)

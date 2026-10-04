@@ -7,6 +7,8 @@ not change any algorithm.
 
 from __future__ import annotations
 
+import logging
+import shutil
 import time
 import traceback
 from dataclasses import dataclass, field
@@ -15,8 +17,13 @@ from pathlib import Path
 
 import numpy as np
 
+from spatialforge.pipeline import logs
 from spatialforge.pipeline.lidar_adapter import StageOutputs, StageRecord, assemble_property
+from spatialforge.pipeline.messages import ErrorRecord, classify_all, classify_error
 from spatialforge.pipeline.models import ModelError
+from spatialforge.pipeline.provenance import runtime_provenance, scrub
+from spatialforge.pipeline.report import build_report, exit_code
+from spatialforge.pipeline.stage_model import fold_stages, standard_name
 from spatialforge.pipeline.render import render_plan
 from spatialforge.pipeline.scene import MetricScene
 from spatialforge.pipeline.serialization import property_to_dict, write_json
@@ -46,6 +53,7 @@ class PipelineResult:
 
 
 _Timer = StageTimer  # historical name
+LOG = logging.getLogger("spatialforge.pipeline")
 
 
 def run_lidar_stages(capture: str | Path, opts: PipelineOptions) -> StageOutputs:
@@ -175,13 +183,18 @@ def _counts(prop_dict: dict, so: StageOutputs) -> dict:
         "openings": len(prop_dict["openings"]), "unverified_openings": len(prop_dict["unverified_openings"]),
         "ceiling_levels": len(so.ceiling_levels),
         "rooms_with_ceiling": sum(1 for r in prop_dict["rooms"] if r["ceiling"]["observed"]),
+        "damage_regions": len(prop_dict["damage_regions"]), "concealed_damage_flags": len(prop_dict["concealed_damage_flags"]),
+        "scope_line_items": len(prop_dict["scope_line_items"]),
     }
 
 
-def _run_damage(prop, so: StageOutputs, out_dir: Path) -> None:
-    """Visible-damage analysis on the tier's RGB evidence. Never fatal: a failure is a warning and an empty damage layer."""
+def _run_damage(prop, so: StageOutputs, out_dir: Path) -> bool:
+    """Visible-damage analysis on the tier's RGB evidence. Never fatal: a failure is a warning and an empty damage layer.
+    Returns True if the analysis ran."""
+    logs.announce("damage_analysis")
     rec = StageRecord("damage_analysis", "ok")
     t0 = time.perf_counter()
+    ran = False
     try:
         from spatialforge.damage.analyze import analyze_damage, apply_to_property
 
@@ -197,19 +210,60 @@ def _run_damage(prop, so: StageOutputs, out_dir: Path) -> None:
                            "with_metric_extent": outcome.report["detections_with_metric_extent"],
                            "concealed_flags": len(outcome.flags), "scope_items": len(outcome.items)}
             rec.status = "warning" if rec.warnings else "ok"
+            ran = True
     except Exception as exc:
+        LOG.exception("damage analysis failed")
         rec.status, rec.error = "failed", f"{type(exc).__name__}: {exc}"
         prop.warnings.append(f"Damage analysis failed and was skipped ({type(exc).__name__}: {exc}); the damage layer is empty.")
     rec.seconds = time.perf_counter() - t0
-    prop.timing["damage_analysis_s"] = round(rec.seconds, 3)
     so.stages.append(rec)
+    return ran
+
+
+def _no_geometry_error(prop, so: StageOutputs) -> ErrorRecord:
+    """Why there is nothing to report: the most specific reason the stages can give."""
+    extra = so.debug.get("run_report_extra", {})
+    rooms = extra.get("photos", {}).get("rooms") if isinstance(extra.get("photos"), dict) else None
+    if rooms and all(r.get("status") == "unreconstructed" for r in rooms):
+        return ErrorRecord("SFM_FAILED", "frontend", "No room folder could be reconstructed: structure-from-motion failed for every room.",
+                           "Photograph each room with more overlap, include corners, and keep the originals.", False)
+    if extra.get("metric_scale_available") is False:
+        return ErrorRecord("METRIC_SCALE_UNAVAILABLE", "metric_scale",
+                           "No metric scale could be established, so no dimensions can be reported (SfM alone is scale-ambiguous).",
+                           "Check that the metric-depth weights are installed (python scripts/download_models.py) and that the footage "
+                           "gives a trajectory the depth model agrees with.", False)
+    return ErrorRecord("NO_GEOMETRY", "structure", "No walls or rooms could be recovered, so there is no trustworthy property geometry.",
+                       "The capture may not show enough structure (no floor visible, too short, too fast).", False)
+
+
+def _prune_diagnostics(diag: Path, full: bool) -> None:
+    """Normal runs keep the output small: point clouds and keyframe images are only kept with --diagnostics."""
+    if full or not diag.is_dir():
+        return
+    for d in ("keyframes", "keyframes_dense"):
+        shutil.rmtree(diag / d, ignore_errors=True)
+    for ply in diag.rglob("*.ply"):
+        try:
+            ply.unlink()
+        except OSError:
+            pass
+
+
+def _list_files(out_dir: Path) -> list[str]:
+    names = [n for n in ("property.json", "plan.png", "run_report.json") if (out_dir / n).exists()]
+    if (out_dir / "diagnostics").is_dir():
+        names.append("diagnostics/")
+    return names
 
 
 def process_capture(capture: str | Path, output: str | Path, options: PipelineOptions | None = None,
-                    stages_fn=None, tier: str = "lidar", damage: bool = True) -> PipelineResult:
-    """Run the pipeline and write property.json, plan.png, run_report.json and diagnostics/.
+                    stages_fn=None, tier: str = "lidar", damage: bool = True, *, diagnostics: bool = False,
+                    display_output: str | Path | None = None, tier_requested: str | None = None, detection: str | None = None,
+                    debug: bool = False) -> PipelineResult:
+    """Run one tier and write property.json, plan.png, run_report.json and diagnostics/ into `output`.
 
-    `stages_fn(capture, options) -> StageOutputs` is injectable so tests can supply stage outputs.
+    `stages_fn(capture, options) -> StageOutputs` is injectable so tests can supply stage outputs. `display_output` is the
+    path recorded in the report when `output` is a staging folder. Status: success | partial | failure (see pipeline.report).
     """
     options = options or PipelineOptions()
     stages_fn = stages_fn or run_lidar_stages
@@ -217,64 +271,104 @@ def process_capture(capture: str | Path, output: str | Path, options: PipelineOp
     out_dir.mkdir(parents=True, exist_ok=True)
     started = datetime.now(timezone.utc)
     t0 = time.perf_counter()
-    report: dict = {"tier": tier, "capture": str(capture), "output": str(out_dir),
-                    "started_at": started.isoformat(timespec="seconds"), "errors": [], "warnings": []}
+    config = {"tier": tier, "damage": damage, "diagnostics": diagnostics, "debug": debug}
 
-    def finish(status: str, code: int, prop_dict=None, so: StageOutputs | None = None, files=None) -> PipelineResult:
-        ended = datetime.now(timezone.utc)
-        report.update(status=status, ended_at=ended.isoformat(timespec="seconds"),
-                      runtime_s=round(time.perf_counter() - t0, 2))
+    def finish(status: str, raw_stages: list, errors: list[ErrorRecord], prop=None, prop_dict=None, so: StageOutputs | None = None,
+               extras: dict | None = None, counts=None, plan=None, diag_warnings=None) -> PipelineResult:
+        decisions = None
         if so is not None:
-            report["stages"] = [{"name": s.name, "status": s.status, "seconds": round(s.seconds, 3),
-                                 "warnings": s.warnings, "error": s.error, "details": s.details} for s in so.stages]
-            report["production_pose_source"] = so.pose_source
-            report["fallback_decisions"] = so.decisions if so.decisions is not None else [{
+            decisions = so.decisions if so.decisions is not None else [{
                 "stage": "pose_refinement",
                 "decision": "kept the supplied (original) poses" if not so.drift.get("correction_accepted") else "used corrected poses",
-                "reason": so.drift.get("fallback_reason") or "metrics supported the correction"}]
-            report.update(so.debug.get("run_report_extra", {}))
-        if prop_dict is not None:
-            report["counts"] = _counts(prop_dict, so)
-            report["warnings"] = prop_dict["warnings"]
-        report["outputs"] = {k: str(v) for k, v in (files or {}).items()}
+                "reason": so.drift.get("fallback_reason") or "metrics supported the correction"}] if tier == "lidar" else []
+        ex = dict(extras or {})
+        if so is not None:
+            ex.setdefault("production_pose_source", so.pose_source)
+            ex.update(so.debug.get("run_report_extra", {}))
+        if plan is not None:
+            ex["plan"] = plan
+        warns = None
+        if prop is not None:
+            warns = list(prop.warning_records) if prop.warning_records else [w.to_dict() for w in classify_all(prop.warnings)]
+        report = build_report(
+            tier=tier, tier_requested=tier_requested, detection=detection, status=status, capture=capture,
+            display_output=display_output or out_dir, started=started.isoformat(timespec="seconds"),
+            ended=datetime.now(timezone.utc).isoformat(timespec="seconds"), duration_s=time.perf_counter() - t0,
+            raw_stages=raw_stages, property_warning_records=warns, errors=errors, counts=counts, decisions=decisions, config=config,
+            files=_list_files(out_dir) + ([] if (out_dir / "run_report.json").exists() else ["run_report.json"]), extras=ex,
+            diagnostic_warnings=diag_warnings)
+        report = scrub(report)
         write_json(out_dir / "run_report.json", report)
-        return PipelineResult(status, code, out_dir, prop_dict, report, files or {})
+        files = {n.rstrip("/"): out_dir / n.rstrip("/") for n in _list_files(out_dir)}
+        return PipelineResult(status, exit_code(status), out_dir, prop_dict, report, files)
 
     if hasattr(options, "output_dir"):
         options.output_dir = out_dir  # a tier that writes its own diagnostics needs to know where
     try:
         so = stages_fn(capture, options)
     except PipelineFailure as exc:
-        report["errors"].append({"stage": exc.stage, "message": exc.message})
-        if exc.stages:
-            report["stages"] = [{"name": s.name, "status": s.status, "seconds": round(s.seconds, 3),
-                                 "warnings": s.warnings, "error": s.error, "details": s.details} for s in exc.stages]
-        report.update(exc.extra)
-        return finish("failure", 1)
+        std = standard_name(exc.stage) or "frontend"
+        err = classify_error(exc.message, std, exc.stage)
+        if exc.code:
+            err.code, err.hint = exc.code, exc.hint or err.hint
+        _prune_diagnostics(out_dir / "diagnostics", diagnostics)
+        return finish("failure", exc.stages or [], [err], extras=dict(exc.extra))
     except Exception as exc:  # unexpected: still a clean failure with the reason recorded
-        report["errors"].append({"stage": "pipeline", "message": f"{type(exc).__name__}: {exc}",
-                                 "trace": traceback.format_exc(limit=4)})
-        return finish("failure", 1)
+        LOG.exception("unexpected error")
+        err = ErrorRecord("UNEXPECTED_ERROR", "frontend", f"{type(exc).__name__}: {exc}",
+                          "Run again with --debug for the traceback; details are in diagnostics/run.log.", False, "pipeline")
+        extras = {"traceback": traceback.format_exc(limit=6)} if debug else {}
+        return finish("failure", [], [err], extras=extras)
 
     try:
         prop = so.prebuilt_property if so.prebuilt_property is not None else assemble_property(so)
-        if damage and so.evidence_fn is not None:
-            _run_damage(prop, so, out_dir)
+    except (ModelError, ValueError) as exc:
+        err = ErrorRecord("ASSEMBLY_FAILED", "geometry", f"The property could not be assembled: {exc}", None, False, "assembly")
+        _prune_diagnostics(out_dir / "diagnostics", diagnostics)
+        return finish("failure", so.stages, [err], so=so)
+
+    if not prop.rooms and not prop.walls:
+        # nothing trustworthy to report: this is a FAILURE, not a "partial" with an empty property
+        prop.warning_records = [w.to_dict() for w in classify_all(prop.warnings)]
+        _prune_diagnostics(out_dir / "diagnostics", diagnostics)
+        return finish("failure", so.stages, [_no_geometry_error(prop, so)], prop=prop, so=so)
+
+    damage_ran = False
+    if damage and so.evidence_fn is not None:
+        damage_ran = _run_damage(prop, so, out_dir)
+    elif not damage:
+        so.stages.append(StageRecord("damage_analysis", "skipped", 0.0, [], None, {"reason": "disabled (--no-damage)"}))
+
+    prop.provenance["runtime"] = runtime_provenance(tier, damage_ran)
+    prop.provenance["fallback_decisions"] = so.decisions if so.decisions is not None else (
+        [{"stage": "pose_refinement", "decision": "kept the supplied (original) poses" if not so.drift.get("correction_accepted")
+          else "used corrected poses", "reason": so.drift.get("fallback_reason") or "metrics supported the correction"}]
+        if tier == "lidar" else [])
+    if detection:
+        prop.provenance.setdefault("pipeline", {})["tier_detection"] = detection
+    prop.warning_records = [w.to_dict() for w in classify_all(prop.warnings)]
+
+    try:
+        logs.announce("rendering")
         t_render = time.perf_counter()
         render_info = render_plan(prop, out_dir / "plan.png", f"SpatialForge floor plan — {so.capture_name}")
-        prop.timing["render_plan_s"] = round(time.perf_counter() - t_render, 3)
-        prop_dict = property_to_dict(prop)
+        so.stages.append(StageRecord("rendering", "ok", time.perf_counter() - t_render))
+        logs.announce("serialization")
+        t_ser = time.perf_counter()
+        std_seconds = {s["stage"]: s["duration_seconds"] for s in fold_stages(so.stages, lambda std, m: [])}
+        prop.timing = {"stages": std_seconds, "total_duration_seconds": round(time.perf_counter() - t0, 3)}
+        prop_dict = scrub(property_to_dict(prop))
     except (ModelError, ValueError) as exc:
-        report["errors"].append({"stage": "assembly", "message": f"{type(exc).__name__}: {exc}"})
-        return finish("failure", 1, so=so)
+        err = ErrorRecord("SERIALIZATION_FAILED", "serialization", f"The property failed validation: {exc}", None, False, "serialization")
+        return finish("failure", so.stages, [err], so=so)
 
-    prop_dict["timing"]["total_s"] = round(time.perf_counter() - t0, 3)
+    # write the property last: its presence means the run produced a valid, serialised property
+    diag_warnings = _write_diagnostics(out_dir, so)
+    _prune_diagnostics(out_dir / "diagnostics", diagnostics)
     write_json(out_dir / "property.json", prop_dict)
-    report["diagnostic_warnings"] = _write_diagnostics(out_dir, so)
-    files = {"property.json": out_dir / "property.json", "plan.png": out_dir / "plan.png",
-             "run_report.json": out_dir / "run_report.json"}
-    report["plan"] = {"rooms_drawn": render_info.rooms_drawn, "walls_drawn": render_info.walls_drawn,
-                      "openings_drawn": render_info.openings_drawn}
-    failed = [s.name for s in so.stages if s.status == "failed"]
+    so.stages.append(StageRecord("serialization", "ok", time.perf_counter() - t_ser))
+    plan = {"rooms_drawn": render_info.rooms_drawn, "walls_drawn": render_info.walls_drawn, "openings_drawn": render_info.openings_drawn}
+    failed = [s.name for s in so.stages if s.status == "failed" and s.name != "damage_analysis"]  # an optional layer cannot downgrade the run
     status = "success" if (prop_dict["property"]["status"] == "complete" and not failed) else "partial"
-    return finish(status, 0, prop_dict, so, files)
+    return finish(status, so.stages, [], prop=prop, prop_dict=prop_dict, so=so, counts=_counts(prop_dict, so), plan=plan,
+                  diag_warnings=diag_warnings)

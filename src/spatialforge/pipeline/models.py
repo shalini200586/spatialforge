@@ -334,7 +334,8 @@ class Property:
     damage: list[DamageRegion] = field(default_factory=list)
     concealed_damage_flags: list[dict] = field(default_factory=list)
     scope_line_items: list[dict] = field(default_factory=list)
-    warnings: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)  # readable messages
+    warning_records: list[dict] = field(default_factory=list)  # the same warnings, structured: code, stage, severity, message, recoverable
     provenance: dict = field(default_factory=dict)
     timing: dict = field(default_factory=dict)
     schema_version: str = SCHEMA_VERSION
@@ -403,10 +404,10 @@ class Property:
             "openings": [o.to_dict() for o in self.openings],
             "unverified_openings": [o.to_dict() for o in self.unverified_openings],
             "damage_regions": [d.to_dict() for d in self.damage],
-            "damage": [d.to_dict() for d in self.damage],  # deprecated alias of damage_regions (kept for older consumers)
             "concealed_damage_flags": list(self.concealed_damage_flags),
             "scope_line_items": list(self.scope_line_items),
             "warnings": list(self.warnings),
+            "warning_records": list(self.warning_records),
             "provenance": self.provenance,
             "timing": self.timing,
         }
